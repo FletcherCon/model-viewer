@@ -1,0 +1,2782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SIE Model Viewer — BIM Intelligence Platform</title>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.162.0/examples/jsm/"
+  }
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg-primary: #0a0e17;
+  --bg-secondary: #111827;
+  --bg-tertiary: #1a2236;
+  --bg-elevated: #1e293b;
+  --bg-hover: #243044;
+  --border: #2a3a52;
+  --border-light: #334766;
+  --text-primary: #e8edf5;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --accent: #3b82f6;
+  --accent-hover: #2563eb;
+  --accent-glow: rgba(59, 130, 246, 0.15);
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --info: #06b6d4;
+  --font-body: 'DM Sans', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --radius: 6px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+}
+
+html, body { 
+  height: 100%; 
+  overflow: hidden; 
+  font-family: var(--font-body);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+/* ── LOGIN SCREEN ── */
+#login-screen {
+  position: fixed; inset: 0; z-index: 10000;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg-primary);
+  background-image: 
+    radial-gradient(ellipse at 20% 50%, rgba(59,130,246,0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(16,185,129,0.06) 0%, transparent 50%);
+}
+#login-screen.hidden { display: none; }
+
+.login-card {
+  width: 400px; padding: 48px 40px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+.login-card .logo-area {
+  text-align: center; margin-bottom: 36px;
+}
+.login-card .logo-area h1 {
+  font-size: 22px; font-weight: 700; letter-spacing: -0.5px;
+  background: linear-gradient(135deg, var(--accent), var(--info));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.login-card .logo-area p {
+  color: var(--text-muted); font-size: 13px; margin-top: 6px;
+}
+.form-group { margin-bottom: 18px; }
+.form-group label {
+  display: block; font-size: 12px; font-weight: 500;
+  color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.form-group input, .form-group select {
+  width: 100%; padding: 10px 14px; font-size: 13px;
+  background: var(--bg-tertiary); border: 1px solid var(--border);
+  border-radius: var(--radius); color: var(--text-primary);
+  font-family: var(--font-body); outline: none; transition: border-color .2s;
+}
+.form-group input:focus, .form-group select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+.btn-login {
+  width: 100%; padding: 12px; margin-top: 8px; border: none;
+  background: var(--accent); color: #fff; font-family: var(--font-body);
+  font-size: 14px; font-weight: 600; border-radius: var(--radius);
+  cursor: pointer; transition: background .2s;
+}
+.btn-login:hover { background: var(--accent-hover); }
+
+/* ── APP LAYOUT ── */
+#app { display: none; height: 100vh; flex-direction: column; }
+#app.active { display: flex; }
+
+/* TOP BAR */
+.topbar {
+  height: 48px; display: flex; align-items: center;
+  padding: 0 16px; gap: 12px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0; z-index: 100;
+}
+.topbar .brand {
+  font-weight: 700; font-size: 15px; letter-spacing: -0.3px;
+  background: linear-gradient(135deg, var(--accent), var(--info));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  margin-right: 8px;
+}
+.topbar-logo {
+  height: 36px; object-fit: contain;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
+}
+.topbar .project-name {
+  font-size: 13px; color: var(--text-secondary);
+  padding: 4px 10px; background: var(--bg-tertiary);
+  border-radius: 4px; border: 1px solid var(--border);
+}
+.topbar .spacer { flex: 1; }
+.topbar .user-badge {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; color: var(--text-secondary);
+}
+.topbar .role-tag {
+  padding: 2px 8px; border-radius: 3px;
+  font-size: 10px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.role-tag.admin { background: rgba(59,130,246,0.15); color: var(--accent); }
+.role-tag.engineer { background: rgba(16,185,129,0.15); color: var(--success); }
+.role-tag.manager { background: rgba(245,158,11,0.15); color: var(--warning); }
+.role-tag.client { background: rgba(168,85,247,0.15); color: #a855f7; }
+
+/* TOOLBAR */
+.toolbar {
+  height: 40px; display: flex; align-items: center;
+  padding: 0 12px; gap: 2px;
+  background: var(--bg-tertiary);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.toolbar .divider {
+  width: 1px; height: 20px; background: var(--border);
+  margin: 0 6px;
+}
+.tool-btn {
+  display: flex; align-items: center; justify-content: center; gap: 5px;
+  height: 30px; padding: 0 10px; border: none;
+  background: transparent; color: var(--text-secondary);
+  border-radius: 4px; cursor: pointer; font-size: 12px;
+  font-family: var(--font-body); transition: all .15s; white-space: nowrap;
+}
+.tool-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+.tool-btn.active { background: var(--accent); color: #fff; }
+.tool-btn svg { width: 16px; height: 16px; }
+.tool-btn .kbd {
+  font-size: 9px; padding: 1px 4px; background: rgba(255,255,255,0.08);
+  border-radius: 2px; font-family: var(--font-mono);
+}
+
+/* MAIN AREA */
+.main-area {
+  display: flex; flex: 1; overflow: hidden; position: relative;
+}
+
+/* SIDE PANELS */
+.panel-left, .panel-right {
+  width: 320px; display: flex; flex-direction: column;
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border);
+  overflow: hidden; flex-shrink: 0;
+  transition: width .25s ease, opacity .25s ease;
+}
+.panel-right {
+  border-right: none; border-left: 1px solid var(--border);
+  width: 360px;
+}
+.panel-left.collapsed, .panel-right.collapsed {
+  width: 0; opacity: 0; overflow: hidden;
+}
+.panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px; border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.panel-header h3 {
+  font-size: 12px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.6px; color: var(--text-secondary);
+}
+.panel-tabs {
+  display: flex; border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.panel-tab {
+  flex: 1; padding: 9px 8px; border: none; background: transparent;
+  color: var(--text-muted); font-size: 11px; font-weight: 500;
+  font-family: var(--font-body); cursor: pointer; text-align: center;
+  border-bottom: 2px solid transparent; transition: all .15s;
+  text-transform: uppercase; letter-spacing: 0.4px;
+}
+.panel-tab:hover { color: var(--text-secondary); }
+.panel-tab.active {
+  color: var(--accent); border-bottom-color: var(--accent);
+  background: var(--accent-glow);
+}
+.panel-content {
+  flex: 1; overflow-y: auto; padding: 12px;
+}
+.panel-content::-webkit-scrollbar { width: 5px; }
+.panel-content::-webkit-scrollbar-track { background: transparent; }
+.panel-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* MODEL TREE */
+.tree-item {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 8px; border-radius: 4px; cursor: pointer;
+  font-size: 12px; color: var(--text-secondary);
+  transition: all .12s;
+}
+.tree-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+.tree-item.active { background: var(--accent-glow); color: var(--accent); }
+.tree-item.selected { background: rgba(59,130,246,0.2); color: var(--accent); border: 1px solid rgba(59,130,246,0.3); }
+.tree-item .icon { width: 16px; height: 16px; flex-shrink: 0; }
+.tree-item .expand-arrow {
+  width: 14px; height: 14px; flex-shrink: 0; cursor: pointer;
+  transition: transform .15s; color: var(--text-muted);
+}
+.tree-item .expand-arrow.open { transform: rotate(90deg); }
+.tree-children { padding-left: 20px; }
+.tree-children.collapsed { display: none; }
+
+/* PROPERTIES TABLE */
+.prop-section { margin-bottom: 14px; }
+.prop-section-title {
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.5px; color: var(--text-muted);
+  padding: 6px 0; border-bottom: 1px solid var(--border);
+  margin-bottom: 6px;
+}
+.prop-row {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 5px 8px; border-radius: 3px; gap: 12px;
+}
+.prop-row:hover { background: var(--bg-hover); }
+.prop-key {
+  font-size: 11.5px; color: var(--text-muted); flex-shrink: 0;
+  min-width: 110px;
+}
+.prop-val {
+  font-size: 11.5px; color: var(--text-primary); text-align: right;
+  font-family: var(--font-mono); word-break: break-all;
+}
+
+/* IOT PANEL */
+.iot-card {
+  background: var(--bg-tertiary); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 12px; margin-bottom: 10px;
+}
+.iot-card .sensor-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 8px;
+}
+.iot-card .sensor-name { font-size: 12px; font-weight: 600; }
+.iot-card .sensor-status {
+  width: 8px; height: 8px; border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+.sensor-status.ok { background: var(--success); box-shadow: 0 0 6px rgba(16,185,129,0.5); }
+.sensor-status.warn { background: var(--warning); box-shadow: 0 0 6px rgba(245,158,11,0.5); }
+.sensor-status.danger { background: var(--danger); box-shadow: 0 0 6px rgba(239,68,68,0.5); }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+.iot-value {
+  font-size: 28px; font-weight: 700; font-family: var(--font-mono);
+  line-height: 1;
+}
+.iot-unit { font-size: 13px; font-weight: 400; color: var(--text-muted); margin-left: 2px; }
+.iot-bar {
+  height: 6px; border-radius: 3px; background: var(--bg-hover);
+  margin-top: 8px; overflow: hidden;
+}
+.iot-bar-fill {
+  height: 100%; border-radius: 3px; transition: width .8s ease;
+}
+.iot-meta {
+  display: flex; justify-content: space-between; margin-top: 6px;
+  font-size: 10px; color: var(--text-muted);
+}
+
+/* PROGRESS OVERLAY */
+.progress-legend {
+  display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.legend-item {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; color: var(--text-secondary);
+}
+.legend-dot {
+  width: 10px; height: 10px; border-radius: 2px;
+}
+
+/* DOCUMENTS */
+.doc-card {
+  display: flex; gap: 10px; padding: 10px;
+  background: var(--bg-tertiary); border: 1px solid var(--border);
+  border-radius: var(--radius); margin-bottom: 8px;
+  cursor: pointer; transition: all .15s;
+}
+.doc-card:hover { border-color: var(--accent); background: var(--bg-hover); }
+.doc-icon {
+  width: 36px; height: 36px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; flex-shrink: 0;
+}
+.doc-icon.pdf { background: rgba(239,68,68,0.15); color: var(--danger); }
+.doc-icon.dwg { background: rgba(59,130,246,0.15); color: var(--accent); }
+.doc-icon.ifc { background: rgba(16,185,129,0.15); color: var(--success); }
+.doc-icon.img { background: rgba(168,85,247,0.15); color: #a855f7; }
+.doc-icon.xls { background: rgba(16,185,129,0.15); color: var(--success); }
+.doc-info h4 { font-size: 12px; font-weight: 500; margin-bottom: 2px; }
+.doc-info p { font-size: 11px; color: var(--text-muted); }
+
+/* VIEWER */
+.viewer-container {
+  flex: 1; position: relative; overflow: hidden;
+  background: #0d1117;
+}
+#viewer-canvas {
+  width: 100%; height: 100%; display: block;
+}
+.viewer-overlay-info {
+  position: absolute; bottom: 16px; left: 16px;
+  font-size: 11px; color: var(--text-muted);
+  font-family: var(--font-mono);
+  display: flex; gap: 16px;
+  pointer-events: none;
+}
+.viewer-overlay-info span {
+  padding: 4px 8px; background: rgba(0,0,0,0.6);
+  border-radius: 3px; backdrop-filter: blur(4px);
+}
+.view-cube {
+  position: absolute; top: 16px; right: 16px;
+  width: 80px; height: 80px; pointer-events: auto;
+}
+
+/* SELECTION HIGHLIGHT */
+.selection-tooltip {
+  position: absolute; pointer-events: none;
+  background: var(--bg-secondary); border: 1px solid var(--accent);
+  border-radius: var(--radius); padding: 8px 12px;
+  font-size: 12px; box-shadow: var(--shadow);
+  z-index: 50; display: none;
+}
+.selection-tooltip .sel-name { font-weight: 600; color: var(--accent); }
+.selection-tooltip .sel-type { color: var(--text-muted); font-size: 11px; }
+
+/* MINI MAP */
+.minimap {
+  position: absolute; bottom: 16px; right: 16px;
+  width: 140px; height: 100px;
+  background: rgba(17,24,39,0.9); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+  pointer-events: none;
+}
+
+/* SECTION PLANE INDICATOR */
+.section-indicator {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none; display: none;
+  font-size: 12px; color: var(--warning);
+  background: rgba(0,0,0,0.7); padding: 6px 12px;
+  border-radius: 4px; border: 1px solid var(--warning);
+}
+
+/* CONTEXT MENU */
+.context-menu {
+  position: fixed; display: none; z-index: 500;
+  background: var(--bg-secondary); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 4px;
+  box-shadow: var(--shadow); min-width: 180px;
+}
+.ctx-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 12px; border-radius: 3px; cursor: pointer;
+  font-size: 12px; color: var(--text-secondary);
+}
+.ctx-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+.ctx-item .ctx-key { margin-left: auto; font-size: 10px; color: var(--text-muted); font-family: var(--font-mono); }
+
+/* STATUS BAR */
+.statusbar {
+  height: 26px; display: flex; align-items: center;
+  padding: 0 12px; gap: 16px;
+  background: var(--bg-tertiary);
+  border-top: 1px solid var(--border);
+  font-size: 11px; color: var(--text-muted);
+  flex-shrink: 0;
+}
+.statusbar .status-item { display: flex; align-items: center; gap: 4px; }
+.statusbar .dot { width: 6px; height: 6px; border-radius: 50%; }
+.statusbar .dot.green { background: var(--success); }
+.statusbar .spacer { flex: 1; }
+
+/* LOADING */
+#loader {
+  position: fixed; inset: 0; z-index: 9999;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  background: var(--bg-primary); gap: 20px;
+}
+#loader.hidden { display: none; }
+.loader-spinner {
+  width: 40px; height: 40px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loader-text { font-size: 13px; color: var(--text-secondary); }
+.loader-bar {
+  width: 240px; height: 3px; background: var(--border);
+  border-radius: 2px; overflow: hidden;
+}
+.loader-bar-fill {
+  height: 100%; background: var(--accent);
+  border-radius: 2px; width: 0%;
+  transition: width .3s ease;
+}
+
+/* NOTIFICATION TOAST */
+.toast-container {
+  position: fixed; top: 60px; right: 16px; z-index: 9000;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.toast {
+  padding: 10px 16px; border-radius: var(--radius);
+  background: var(--bg-secondary); border: 1px solid var(--border);
+  box-shadow: var(--shadow); font-size: 12px;
+  display: flex; align-items: center; gap: 8px;
+  animation: slideIn .3s ease;
+  max-width: 320px;
+}
+@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } }
+.toast.success { border-left: 3px solid var(--success); }
+.toast.warning { border-left: 3px solid var(--warning); }
+.toast.info { border-left: 3px solid var(--accent); }
+
+/* MODEL COORDINATION BADGES */
+.model-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: 4px;
+  font-size: 11px; font-weight: 500; cursor: pointer;
+  border: 1px solid transparent; transition: all .15s;
+}
+.model-badge.arch { background: rgba(59,130,246,0.12); color: #60a5fa; border-color: rgba(59,130,246,0.25); }
+.model-badge.struct { background: rgba(245,158,11,0.12); color: #fbbf24; border-color: rgba(245,158,11,0.25); }
+.model-badge.mep { background: rgba(16,185,129,0.12); color: #34d399; border-color: rgba(16,185,129,0.25); }
+.model-badge.civil { background: rgba(168,85,247,0.12); color: #c084fc; border-color: rgba(168,85,247,0.25); }
+.model-badge .check { width: 12px; height: 12px; }
+
+.model-badge.inactive { opacity: 0.35; }
+.model-badge:hover { opacity: 1; }
+
+/* CLASH ITEM */
+.clash-item {
+  display: flex; gap: 10px; padding: 10px;
+  background: var(--bg-tertiary); border: 1px solid var(--border);
+  border-radius: var(--radius); margin-bottom: 8px;
+  cursor: pointer; transition: all .15s;
+}
+.clash-item:hover { border-color: var(--danger); }
+.clash-icon {
+  width: 32px; height: 32px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(239,68,68,0.12); flex-shrink: 0;
+}
+.clash-info h4 { font-size: 12px; font-weight: 500; margin-bottom: 2px; }
+.clash-info p { font-size: 11px; color: var(--text-muted); }
+.clash-severity {
+  font-size: 10px; font-weight: 600; padding: 1px 6px;
+  border-radius: 2px; text-transform: uppercase;
+}
+.clash-severity.high { background: rgba(239,68,68,0.15); color: var(--danger); }
+.clash-severity.med { background: rgba(245,158,11,0.15); color: var(--warning); }
+.clash-severity.low { background: rgba(59,130,246,0.15); color: var(--accent); }
+
+/* SEARCH */
+.search-box {
+  padding: 8px 12px; border-bottom: 1px solid var(--border);
+}
+.search-input {
+  width: 100%; padding: 7px 10px 7px 30px;
+  background: var(--bg-tertiary); border: 1px solid var(--border);
+  border-radius: 4px; color: var(--text-primary);
+  font-size: 12px; font-family: var(--font-body); outline: none;
+}
+.search-input:focus { border-color: var(--accent); }
+.search-wrapper { position: relative; }
+.search-wrapper svg {
+  position: absolute; left: 8px; top: 50%; transform: translateY(-50%);
+  width: 14px; height: 14px; color: var(--text-muted);
+}
+
+/* RESPONSIVE */
+@media (max-width: 1200px) {
+
+/* UPLOAD MODAL */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 8000;
+  background: rgba(0,0,0,0.65); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+}
+.modal-overlay.hidden { display: none; }
+.modal-card {
+  width: 520px; max-width: 90vw;
+  background: var(--bg-secondary); border: 1px solid var(--border);
+  border-radius: 12px; box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+  overflow: hidden;
+}
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 24px; border-bottom: 1px solid var(--border);
+}
+.modal-header h2 { font-size: 16px; font-weight: 600; }
+.modal-close {
+  width: 30px; height: 30px; border: none; background: var(--bg-tertiary);
+  color: var(--text-secondary); border-radius: 6px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; transition: all .15s;
+}
+.modal-close:hover { background: var(--bg-hover); color: var(--text-primary); }
+.modal-body { padding: 24px; }
+.upload-zone {
+  border: 2px dashed var(--border-light); border-radius: 10px;
+  padding: 40px 24px; text-align: center; cursor: pointer;
+  transition: all .2s; background: var(--bg-tertiary);
+}
+.upload-zone:hover, .upload-zone.dragover {
+  border-color: var(--accent); background: var(--accent-glow);
+}
+.upload-zone svg { margin: 0 auto 12px; display: block; opacity: 0.5; }
+.upload-zone h3 { font-size: 14px; font-weight: 500; margin-bottom: 6px; }
+.upload-zone p { font-size: 12px; color: var(--text-muted); }
+.upload-zone .formats { 
+  margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px; justify-content: center;
+}
+.upload-zone .fmt-tag {
+  padding: 2px 8px; border-radius: 3px; font-size: 10px; font-weight: 600;
+  background: var(--bg-hover); color: var(--text-secondary);
+  font-family: var(--font-mono); text-transform: uppercase;
+}
+.upload-file-info {
+  display: none; padding: 16px; background: var(--bg-tertiary);
+  border: 1px solid var(--border); border-radius: 8px; margin-top: 16px;
+}
+.upload-file-info.visible { display: flex; align-items: center; gap: 12px; }
+.upload-file-icon {
+  width: 44px; height: 44px; border-radius: 8px;
+  background: rgba(59,130,246,0.12); color: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; font-family: var(--font-mono); flex-shrink: 0;
+}
+.upload-file-meta { flex: 1; }
+.upload-file-meta h4 { font-size: 13px; font-weight: 500; margin-bottom: 2px; word-break: break-all; }
+.upload-file-meta p { font-size: 11px; color: var(--text-muted); }
+.upload-file-remove {
+  width: 28px; height: 28px; border: none; background: rgba(239,68,68,0.1);
+  color: var(--danger); border-radius: 6px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.upload-progress {
+  display: none; margin-top: 16px;
+}
+.upload-progress.visible { display: block; }
+.upload-progress-bar {
+  height: 6px; background: var(--bg-hover); border-radius: 3px; overflow: hidden;
+}
+.upload-progress-fill {
+  height: 100%; background: var(--accent); border-radius: 3px;
+  width: 0%; transition: width .3s ease;
+}
+.upload-progress-text {
+  display: flex; justify-content: space-between;
+  font-size: 11px; color: var(--text-muted); margin-top: 6px;
+}
+.modal-footer {
+  display: flex; justify-content: flex-end; gap: 10px;
+  padding: 16px 24px; border-top: 1px solid var(--border);
+}
+.btn-secondary {
+  padding: 9px 18px; border: 1px solid var(--border);
+  background: var(--bg-tertiary); color: var(--text-secondary);
+  border-radius: var(--radius); cursor: pointer; font-size: 13px;
+  font-family: var(--font-body); transition: all .15s;
+}
+.btn-secondary:hover { background: var(--bg-hover); color: var(--text-primary); }
+.btn-primary {
+  padding: 9px 18px; border: none;
+  background: var(--accent); color: #fff;
+  border-radius: var(--radius); cursor: pointer; font-size: 13px;
+  font-weight: 600; font-family: var(--font-body); transition: all .15s;
+}
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+.upload-options { margin-top: 16px; }
+.upload-options label {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; cursor: pointer;
+}
+.upload-options input[type="checkbox"] {
+  accent-color: var(--accent);
+}
+
+/* RESPONSIVE */
+@media (max-width: 1200px) {
+  .panel-left { width: 260px; }
+  .panel-right { width: 300px; }
+}
+@media (max-width: 900px) {
+  .panel-left, .panel-right { position: absolute; z-index: 50; height: calc(100% - 88px); top: 88px; }
+  .panel-left { left: 0; }
+  .panel-right { right: 0; }
+}
+</style>
+</head>
+<body>
+
+<!-- LOADING SCREEN -->
+<div id="loader">
+  <div class="loader-spinner"></div>
+  <div class="loader-text">Initialising SIE Model Viewer…</div>
+  <div class="loader-bar"><div class="loader-bar-fill" id="loader-fill"></div></div>
+</div>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen" class="hidden">
+  <div class="login-card">
+    <div class="logo-area">
+      <img src="data:image/png;base64,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" alt="Smarter Ideas Engineering Services" style="height:48px;margin-bottom:12px;">
+      <h1>SIE Model Viewer</h1>
+      <p>BIM Intelligence Platform</p>
+    </div>
+    <div class="form-group">
+      <label>Username</label>
+      <input type="text" id="login-user" value="f.connor" autocomplete="off">
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="login-pass" value="••••••••">
+    </div>
+    <div class="form-group">
+      <label>Role</label>
+      <select id="login-role">
+        <option value="admin">Admin — Full Access</option>
+        <option value="engineer" selected>Project Engineer</option>
+        <option value="manager">Site Manager</option>
+        <option value="client">Client Representative</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Project</label>
+      <select id="login-project">
+        <option>Tower A — Mixed Use Development</option>
+        <option>ICE Bridge — Infrastructure</option>
+        <option>Higgins Plant — Industrial</option>
+      </select>
+    </div>
+    <button class="btn-login" onclick="doLogin()">Sign In</button>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <span class="brand">SIE Model Viewer</span>
+    <span class="project-name" id="topbar-project">Tower A — Mixed Use Development</span>
+    <span class="spacer"></span>
+    <img src="data:image/png;base64,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" alt="Smarter Ideas Engineering Services" class="topbar-logo" id="topbar-logo">
+    <span class="spacer"></span>
+    <div class="user-badge">
+      <span id="topbar-user">f.connor</span>
+      <span class="role-tag engineer" id="topbar-role">Engineer</span>
+      <button class="tool-btn" onclick="doLogout()" title="Sign Out">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- TOOLBAR -->
+  <div class="toolbar">
+    <button class="tool-btn active" id="btn-orbit" onclick="setNavMode('orbit')" title="Orbit">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+      <span>Orbit</span>
+    </button>
+    <button class="tool-btn" id="btn-pan" onclick="setNavMode('pan')" title="Pan">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg>
+      <span>Pan</span>
+    </button>
+    <button class="tool-btn" onclick="resetZoom()" title="Fit All">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+      <span>Fit</span>
+    </button>
+    <div class="divider"></div>
+    <button class="tool-btn" id="btn-select" onclick="setNavMode('select')" title="Select">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/></svg>
+      <span>Select</span>
+    </button>
+    <button class="tool-btn" id="btn-isolate" onclick="toggleIsolate()" title="Isolate Selection">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6v6H9z"/></svg>
+      <span>Isolate</span>
+    </button>
+    <button class="tool-btn" id="btn-section" onclick="toggleSection()" title="Section Plane">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18"/><line x1="3" y1="12" x2="21" y2="12"/></svg>
+      <span>Section</span>
+    </button>
+    <button class="tool-btn" id="btn-explode" onclick="toggleExplode()" title="Explode View">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2l4 4 4-4M2 8l4 4-4 4M16 22l4-4 4 4M22 8l-4 4 4 4"/><rect x="8" y="8" width="8" height="8" rx="1"/></svg>
+      <span>Explode</span>
+    </button>
+    <div class="divider"></div>
+    <button class="tool-btn" id="btn-measure" onclick="toggleMeasure()" title="Measure">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 2l20 20"/><path d="M6.5 2H2v4.5M17.5 22H22v-4.5"/></svg>
+      <span>Measure</span>
+    </button>
+    <div class="divider"></div>
+    <button class="tool-btn" id="btn-progress" onclick="toggleProgressOverlay()" title="Progress Overlay">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      <span>Progress</span>
+    </button>
+    <button class="tool-btn" id="btn-iot" onclick="toggleIoTOverlay()" title="IoT Overlay">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h.01"/><path d="M8.5 16.5a5 5 0 017 0"/><path d="M5 12.5a10 10 0 0114 0"/><path d="M1.5 8.5a15 15 0 0121 0"/></svg>
+      <span>IoT</span>
+    </button>
+    <div class="divider"></div>
+    <button class="tool-btn" onclick="togglePanel('left')" title="Toggle Model Tree">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+    </button>
+    <button class="tool-btn" onclick="togglePanel('right')" title="Toggle Properties">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
+    </button>
+    <div class="divider"></div>
+    <button class="tool-btn" id="btn-upload-model" title="Upload Model" style="background:rgba(59,130,246,0.1);color:var(--accent);border:1px solid rgba(59,130,246,0.25);">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <span>Upload Model</span>
+    </button>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="main-area">
+    <!-- LEFT PANEL: Model Tree + Models -->
+    <div class="panel-left" id="panel-left">
+      <div class="panel-tabs">
+        <button class="panel-tab active" onclick="switchLeftTab('tree')">Model Tree</button>
+        <button class="panel-tab" onclick="switchLeftTab('models')">Models</button>
+        <button class="panel-tab" onclick="switchLeftTab('clashes')">Clashes</button>
+      </div>
+
+      <!-- Model Tree Tab -->
+      <div id="left-tab-tree">
+        <div class="search-box">
+          <div class="search-wrapper">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            <input class="search-input" placeholder="Search components…" id="tree-search" oninput="filterTree()">
+          </div>
+        </div>
+        <div class="panel-content" id="model-tree"></div>
+      </div>
+
+      <!-- Models Tab -->
+      <div id="left-tab-models" style="display:none">
+        <div class="panel-header">
+          <h3>Federated Models</h3>
+        </div>
+        <div class="panel-content">
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;">
+            <span class="model-badge arch" onclick="toggleModel('arch')">
+              <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Architecture
+            </span>
+            <span class="model-badge struct" onclick="toggleModel('struct')">
+              <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Structure
+            </span>
+            <span class="model-badge mep" onclick="toggleModel('mep')">
+              <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              MEP
+            </span>
+            <span class="model-badge civil" onclick="toggleModel('civil')">
+              <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Civil
+            </span>
+          </div>
+          <div class="prop-section">
+            <div class="prop-section-title">Model Information</div>
+            <div class="prop-row"><span class="prop-key">Architecture</span><span class="prop-val">Tower_A_ARCH_v42.rvt</span></div>
+            <div class="prop-row"><span class="prop-key">Structure</span><span class="prop-val">Tower_A_STR_v38.rvt</span></div>
+            <div class="prop-row"><span class="prop-key">MEP</span><span class="prop-val">Tower_A_MEP_v35.rvt</span></div>
+            <div class="prop-row"><span class="prop-key">Civil</span><span class="prop-val">Tower_A_CIV_v21.dwg</span></div>
+            <div class="prop-row"><span class="prop-key">Last Synced</span><span class="prop-val">09 Feb 2026 08:42</span></div>
+            <div class="prop-row"><span class="prop-key">Total Elements</span><span class="prop-val">24,817</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Clashes Tab -->
+      <div id="left-tab-clashes" style="display:none">
+        <div class="panel-header">
+          <h3>Clash Detection — 12 Issues</h3>
+        </div>
+        <div class="panel-content" id="clash-list"></div>
+      </div>
+    </div>
+
+    <!-- 3D VIEWER -->
+    <div class="viewer-container" id="viewer-container">
+      <canvas id="viewer-canvas"></canvas>
+      <div class="selection-tooltip" id="sel-tooltip">
+        <div class="sel-name">Wall — Exterior Concrete</div>
+        <div class="sel-type">Type: Basic Wall</div>
+      </div>
+      <div class="section-indicator" id="section-indicator">✂ Section Plane Active — Drag to adjust</div>
+      <div class="viewer-overlay-info">
+        <span id="fps-display">60 FPS</span>
+        <span id="elem-count">24,817 elements</span>
+        <span id="nav-mode-display">Orbit</span>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL: Properties + IoT + Docs -->
+    <div class="panel-right" id="panel-right">
+      <div class="panel-tabs">
+        <button class="panel-tab active" onclick="switchRightTab('props')">Properties</button>
+        <button class="panel-tab" onclick="switchRightTab('iot')">IoT Data</button>
+        <button class="panel-tab" onclick="switchRightTab('docs')">Documents</button>
+      </div>
+
+      <!-- Properties Tab -->
+      <div id="right-tab-props">
+        <div class="panel-content" id="props-content">
+          <div style="text-align:center;padding:40px 20px;color:var(--text-muted);">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 12px;display:block;opacity:0.3"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/></svg>
+            <p>Select a component in the 3D view<br>or model tree to inspect properties</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- IoT Tab -->
+      <div id="right-tab-iot" style="display:none">
+        <div class="panel-header">
+          <h3>Live Sensor Readings</h3>
+          <span style="font-size:10px;color:var(--success);">● Live</span>
+        </div>
+        <div class="panel-content" id="iot-content"></div>
+      </div>
+
+      <!-- Documents Tab -->
+      <div id="right-tab-docs" style="display:none">
+        <div class="panel-header">
+          <h3>Linked Documents</h3>
+        </div>
+        <div class="search-box" style="border-bottom:1px solid var(--border);">
+          <div class="search-wrapper">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            <input class="search-input" placeholder="Search documents…">
+          </div>
+        </div>
+        <div class="panel-content" id="docs-content"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROGRESS LEGEND (overlays viewer) -->
+  <div id="progress-panel" style="display:none;position:absolute;bottom:42px;left:50%;transform:translateX(-50%);z-index:40;">
+    <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius);padding:6px 14px;display:flex;gap:14px;align-items:center;box-shadow:var(--shadow);">
+      <span class="legend-item"><span class="legend-dot" style="background:#10b981"></span> Complete</span>
+      <span class="legend-item"><span class="legend-dot" style="background:#3b82f6"></span> In Progress</span>
+      <span class="legend-item"><span class="legend-dot" style="background:#f59e0b"></span> Planned</span>
+      <span class="legend-item"><span class="legend-dot" style="background:#ef4444"></span> Delayed</span>
+      <span class="legend-item"><span class="legend-dot" style="background:#64748b"></span> Not Started</span>
+    </div>
+  </div>
+
+  <!-- STATUS BAR -->
+  <div class="statusbar">
+    <div class="status-item"><span class="dot green"></span> Connected</div>
+    <div class="status-item">Forge Viewer v7.98</div>
+    <div class="status-item" id="status-rendering">WebGL 2.0</div>
+    <div class="spacer"></div>
+    <div class="status-item" id="status-selection">No selection</div>
+    <div class="status-item">Autodesk Platform Services</div>
+  </div>
+</div>
+
+<!-- UPLOAD MODAL -->
+<div class="modal-overlay hidden" id="upload-modal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h2>Upload Model</h2>
+      <button class="modal-close" id="btn-modal-close">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="upload-zone" id="upload-zone">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/>
+          <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+        <h3>Drop your model file here or click to browse</h3>
+        <p>Upload IFC, Revit, or other 3D model files</p>
+        <div class="formats">
+          <span class="fmt-tag" style="background:rgba(16,185,129,0.15);color:var(--success);border:1px solid rgba(16,185,129,0.3);">IFC ✓</span>
+          <span class="fmt-tag" style="background:rgba(59,130,246,0.15);color:var(--accent);border:1px solid rgba(59,130,246,0.3);">RVT</span>
+          <span class="fmt-tag">OBJ</span>
+          <span class="fmt-tag">STL</span>
+          <span class="fmt-tag">GLTF</span>
+          <span class="fmt-tag">GLB</span>
+          <span class="fmt-tag">FBX</span>
+          <span class="fmt-tag">DAE</span>
+          <span class="fmt-tag">PLY</span>
+        </div>
+      </div>
+      <input type="file" id="file-input" style="display:none" accept=".obj,.stl,.gltf,.glb,.fbx,.ifc,.dae,.ply,.rvt">
+      <div class="upload-file-info" id="upload-file-info">
+        <div class="upload-file-icon" id="upload-file-ext">OBJ</div>
+        <div class="upload-file-meta">
+          <h4 id="upload-file-name">filename.obj</h4>
+          <p id="upload-file-size">2.4 MB</p>
+        </div>
+        <button class="upload-file-remove" id="btn-clear-file" title="Remove">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="upload-progress" id="upload-progress">
+        <div class="upload-progress-bar"><div class="upload-progress-fill" id="upload-progress-fill"></div></div>
+        <div class="upload-progress-text">
+          <span id="upload-progress-label">Processing model…</span>
+          <span id="upload-progress-pct">0%</span>
+        </div>
+      </div>
+      <div class="upload-options">
+        <label><input type="checkbox" id="opt-replace" checked> Replace current model</label>
+        <label><input type="checkbox" id="opt-center"> Auto-center and scale to fit</label>
+        <label><input type="checkbox" id="opt-shadows"> Enable shadows on imported geometry</label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" id="btn-upload-cancel">Cancel</button>
+      <button class="btn-primary" id="btn-upload-confirm" disabled>Load Model</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONTEXT MENU -->
+<div class="context-menu" id="context-menu">
+  <div class="ctx-item" onclick="ctxAction('isolate')">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6v6H9z"/></svg>
+    Isolate Element <span class="ctx-key">I</span>
+  </div>
+  <div class="ctx-item" onclick="ctxAction('hide')">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+    Hide Element <span class="ctx-key">H</span>
+  </div>
+  <div class="ctx-item" onclick="ctxAction('showall')">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+    Show All <span class="ctx-key">S</span>
+  </div>
+  <div class="ctx-item" onclick="ctxAction('focus')">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+    Focus <span class="ctx-key">F</span>
+  </div>
+  <div class="ctx-item" onclick="ctxAction('properties')">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    View Properties <span class="ctx-key">P</span>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+// ═══════════════════════════════════════
+// UPLOAD MODAL (standalone — zero dependencies)
+// ═══════════════════════════════════════
+(function() {
+  var uploadedFile = null;
+  var SUPPORTED_EXT = ['obj','stl','gltf','glb','fbx','ifc','dae','ply','rvt'];
+
+  function formatFileSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  }
+
+  function getFileExt(fn) {
+    return fn.split('.').pop().toLowerCase();
+  }
+
+  function $(id) { return document.getElementById(id); }
+
+  window.getUploadedFile = function() { return uploadedFile; };
+  window.setUploadedFile = function(f) { uploadedFile = f; };
+
+  window.openUploadModal = function() {
+    var m = $('upload-modal');
+    if (m) m.classList.remove('hidden');
+    var h = m && m.querySelector('.rvt-help');
+    if (h) h.remove();
+  };
+
+  window.closeUploadModal = function() {
+    var m = $('upload-modal');
+    if (m) m.classList.add('hidden');
+    var p = $('upload-progress');
+    if (p) p.classList.remove('visible');
+    var f = $('upload-progress-fill');
+    if (f) { f.style.width = '0%'; f.style.background = 'var(--accent)'; }
+    var pct = $('upload-progress-pct');
+    if (pct) pct.textContent = '0%';
+    var lbl = $('upload-progress-label');
+    if (lbl) lbl.textContent = 'Processing model…';
+  };
+
+  window.clearUploadFile = function() {
+    uploadedFile = null;
+    var fi = $('file-input');
+    if (fi) fi.value = '';
+    var info = $('upload-file-info');
+    if (info) info.classList.remove('visible');
+    var btn = $('btn-upload-confirm');
+    if (btn) btn.disabled = true;
+    var p = $('upload-progress');
+    if (p) p.classList.remove('visible');
+    var f = $('upload-progress-fill');
+    if (f) f.style.background = 'var(--accent)';
+  };
+
+  function handleFile(file) {
+    var ext = getFileExt(file.name);
+    if (SUPPORTED_EXT.indexOf(ext) === -1) {
+      alert('Unsupported format: .' + ext + '\n\nSupported: IFC, OBJ, STL, GLB, GLTF, FBX, DAE, PLY, RVT');
+      return;
+    }
+    uploadedFile = file;
+    var info = $('upload-file-info');
+    if (info) info.classList.add('visible');
+    var extEl = $('upload-file-ext');
+    if (extEl) extEl.textContent = ext.toUpperCase();
+    var nameEl = $('upload-file-name');
+    if (nameEl) nameEl.textContent = file.name;
+    var sizeEl = $('upload-file-size');
+    if (sizeEl) sizeEl.textContent = formatFileSize(file.size);
+    var btn = $('btn-upload-confirm');
+    if (btn) btn.disabled = false;
+    var p = $('upload-progress');
+    if (p) p.classList.remove('visible');
+    var f = $('upload-progress-fill');
+    if (f) f.style.background = 'var(--accent)';
+  }
+
+  // Attach ALL event listeners after DOM ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', attachEvents);
+  } else {
+    attachEvents();
+  }
+
+  function attachEvents() {
+    // Upload Model button
+    var btnUpload = $('btn-upload-model');
+    if (btnUpload) {
+      btnUpload.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        window.openUploadModal();
+      });
+    }
+
+    // Modal close X
+    var btnClose = $('btn-modal-close');
+    if (btnClose) {
+      btnClose.addEventListener('click', function() { window.closeUploadModal(); });
+    }
+
+    // Cancel button
+    var btnCancel = $('btn-upload-cancel');
+    if (btnCancel) {
+      btnCancel.addEventListener('click', function() { window.closeUploadModal(); });
+    }
+
+    // Load Model / confirm button
+    var btnConfirm = $('btn-upload-confirm');
+    if (btnConfirm) {
+      btnConfirm.addEventListener('click', function() {
+        if (window.processUploadedModel) {
+          window.processUploadedModel();
+        } else {
+          alert('3D engine not loaded yet. Please wait a moment and try again.');
+        }
+      });
+    }
+
+    // Upload zone click → open file picker
+    var zone = $('upload-zone');
+    if (zone) {
+      zone.addEventListener('click', function() {
+        var fi = $('file-input');
+        if (fi) fi.click();
+      });
+      zone.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        zone.classList.add('dragover');
+      });
+      zone.addEventListener('dragleave', function() {
+        zone.classList.remove('dragover');
+      });
+      zone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        zone.classList.remove('dragover');
+        if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+      });
+    }
+
+    // File input change
+    var fi = $('file-input');
+    if (fi) {
+      fi.addEventListener('change', function(e) {
+        if (e.target.files[0]) handleFile(e.target.files[0]);
+      });
+    }
+
+    // Clear file button
+    var btnClear = $('btn-clear-file');
+    if (btnClear) {
+      btnClear.addEventListener('click', function() { window.clearUploadFile(); });
+    }
+
+    // Click overlay to close
+    var modal = $('upload-modal');
+    if (modal) {
+      modal.addEventListener('click', function(e) {
+        if (e.target === modal) window.closeUploadModal();
+      });
+    }
+
+    // Escape key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        var m = $('upload-modal');
+        if (m && !m.classList.contains('hidden')) window.closeUploadModal();
+      }
+    });
+
+    console.log('[SIE Viewer] Upload modal ready');
+  }
+})();
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// ═══════════════════════════════════════
+// APP STATE
+// ═══════════════════════════════════════
+const state = {
+  role: 'engineer',
+  user: 'f.connor',
+  project: 'Tower A',
+  navMode: 'orbit',
+  selectedObject: null,
+  sectionActive: false,
+  explodeActive: false,
+  progressOverlay: false,
+  iotOverlay: false,
+  measureActive: false,
+  isolateMode: false,
+  explodeFactor: 0,
+  models: { arch: true, struct: true, mep: true, civil: true },
+  buildingParts: [],
+  hiddenObjects: new Set(),
+};
+
+// ═══════════════════════════════════════
+// BUILDING DATA (simulated BIM model)
+// ═══════════════════════════════════════
+const BUILDING_DATA = {
+  floors: 25,
+  floorHeight: 3.8,
+  width: 22,
+  depth: 16,
+  podiumFloors: 3,
+  podiumExtendX: 12,
+  podiumExtendZ: 8,
+};
+
+const ELEMENT_DB = [
+  { id: 'FDN-001', name: 'Foundation — Raft Slab', category: 'Foundation', type: 'Structural Foundation', material: 'C40 Concrete', level: 'Foundation', discipline: 'struct', progress: 100, status: 'Complete' },
+  { id: 'COL-001', name: 'Column — C1 (Typical)', category: 'Columns', type: 'Concrete Column 600x600', material: 'C50 Concrete', level: 'Multi', discipline: 'struct', progress: 85, status: 'In Progress' },
+  { id: 'SLB-001', name: 'Floor Slab — Typical', category: 'Floors', type: 'Post-Tensioned Slab 250mm', material: 'C40 Concrete', level: 'Multi', discipline: 'struct', progress: 72, status: 'In Progress' },
+  { id: 'WAL-001', name: 'Core Wall — Lift Shaft', category: 'Walls', type: 'Structural Wall 300mm', material: 'C50 Concrete', level: 'Multi', discipline: 'struct', progress: 80, status: 'In Progress' },
+  { id: 'CWT-001', name: 'Curtain Wall — North', category: 'Curtain Walls', type: 'Unitised Curtain Wall', material: 'Aluminium / DGU Glass', level: 'Multi', discipline: 'arch', progress: 45, status: 'In Progress' },
+  { id: 'CWT-002', name: 'Curtain Wall — East', category: 'Curtain Walls', type: 'Unitised Curtain Wall', material: 'Aluminium / DGU Glass', level: 'Multi', discipline: 'arch', progress: 38, status: 'In Progress' },
+  { id: 'CWT-003', name: 'Curtain Wall — South', category: 'Curtain Walls', type: 'Unitised Curtain Wall', material: 'Aluminium / DGU Glass', level: 'Multi', discipline: 'arch', progress: 52, status: 'In Progress' },
+  { id: 'CWT-004', name: 'Curtain Wall — West', category: 'Curtain Walls', type: 'Unitised Curtain Wall', material: 'Aluminium / DGU Glass', level: 'Multi', discipline: 'arch', progress: 41, status: 'In Progress' },
+  { id: 'RFT-001', name: 'Roof — Tower', category: 'Roofs', type: 'Flat Roof w/ Parapet', material: 'Concrete + Membrane', level: 'Roof', discipline: 'arch', progress: 20, status: 'Planned' },
+  { id: 'RFP-001', name: 'Roof — Podium (Green)', category: 'Roofs', type: 'Green Roof Assembly', material: 'Sedum / Waterproofing', level: 'Level 03', discipline: 'arch', progress: 10, status: 'Planned' },
+  { id: 'MEP-HVAC-001', name: 'AHU — Level 12', category: 'Mechanical', type: 'Air Handling Unit', material: 'Galvanised Steel', level: 'Level 12', discipline: 'mep', progress: 0, status: 'Not Started' },
+  { id: 'MEP-ELEC-001', name: 'DB — Main Switchboard', category: 'Electrical', type: 'Distribution Board', material: 'Steel Enclosure', level: 'Basement 01', discipline: 'mep', progress: 65, status: 'In Progress' },
+  { id: 'MEP-PLB-001', name: 'Riser — Plumbing', category: 'Plumbing', type: 'Plumbing Riser Assembly', material: 'Copper / PVC', level: 'Multi', discipline: 'mep', progress: 55, status: 'In Progress' },
+  { id: 'CVL-001', name: 'Site Works — Hardscape', category: 'Civil', type: 'External Paving', material: 'Interlocking Pavers', level: 'Ground', discipline: 'civil', progress: 15, status: 'Planned' },
+  { id: 'CVL-002', name: 'Stormwater — Detention', category: 'Civil', type: 'OSD Tank', material: 'Precast Concrete', level: 'Basement', discipline: 'civil', progress: 90, status: 'Complete' },
+  { id: 'POD-001', name: 'Podium Structure', category: 'Podium', type: 'RC Frame + Slab', material: 'C40 Concrete', level: 'Levels 01-03', discipline: 'struct', progress: 95, status: 'Complete' },
+  { id: 'ENT-001', name: 'Canopy — Main Entry', category: 'Canopies', type: 'Steel + Glass Canopy', material: 'Steel / Laminated Glass', level: 'Ground', discipline: 'arch', progress: 30, status: 'In Progress' },
+];
+
+const IOT_SENSORS = [
+  { id: 'DUST-L03', name: 'PM10 Dust — Level 03', unit: 'µg/m³', value: 42, max: 100, threshold: 50, zone: 'Level 03', status: 'ok' },
+  { id: 'DUST-L12', name: 'PM10 Dust — Level 12', unit: 'µg/m³', value: 67, max: 100, threshold: 50, zone: 'Level 12', status: 'warn' },
+  { id: 'TEMP-EXT', name: 'Temperature — External', unit: '°C', value: 28.4, max: 50, threshold: 35, zone: 'External', status: 'ok' },
+  { id: 'TEMP-L06', name: 'Temperature — Level 06', unit: '°C', value: 36.2, max: 50, threshold: 35, zone: 'Level 06', status: 'warn' },
+  { id: 'NOISE-GF', name: 'Noise — Ground Floor', unit: 'dB', value: 78, max: 120, threshold: 85, zone: 'Ground', status: 'ok' },
+  { id: 'VIBR-FDN', name: 'Vibration — Foundation', unit: 'mm/s', value: 2.1, max: 10, threshold: 5, zone: 'Foundation', status: 'ok' },
+  { id: 'HUMID-L18', name: 'Humidity — Level 18', unit: '%RH', value: 82, max: 100, threshold: 70, zone: 'Level 18', status: 'danger' },
+  { id: 'WIND-RF', name: 'Wind Speed — Roof', unit: 'km/h', value: 34, max: 80, threshold: 40, zone: 'Roof', status: 'ok' },
+];
+
+const DOCUMENTS = [
+  { name: 'Method Statement — Curtain Wall Install', type: 'pdf', size: '2.4 MB', date: '05 Feb 2026', linked: ['CWT-001','CWT-002','CWT-003','CWT-004'] },
+  { name: 'Structural Drawings — Core Walls', type: 'dwg', size: '18.7 MB', date: '01 Feb 2026', linked: ['WAL-001'] },
+  { name: 'IFC Export — MEP Coordination', type: 'ifc', size: '45.2 MB', date: '03 Feb 2026', linked: ['MEP-HVAC-001','MEP-ELEC-001','MEP-PLB-001'] },
+  { name: 'Site Photo — Foundation Pour', type: 'img', size: '4.1 MB', date: '15 Jan 2026', linked: ['FDN-001'] },
+  { name: 'RFI-042 — Column Grid Offset', type: 'pdf', size: '320 KB', date: '07 Feb 2026', linked: ['COL-001'] },
+  { name: 'Progress Report — Week 06', type: 'xls', size: '1.8 MB', date: '08 Feb 2026', linked: [] },
+  { name: 'Specification — Green Roof Assembly', type: 'pdf', size: '5.6 MB', date: '28 Jan 2026', linked: ['RFP-001'] },
+  { name: 'Architectural Drawings — Podium', type: 'dwg', size: '22.1 MB', date: '30 Jan 2026', linked: ['POD-001','ENT-001'] },
+  { name: 'Clash Report — STR vs MEP Rev 04', type: 'pdf', size: '980 KB', date: '06 Feb 2026', linked: [] },
+  { name: 'As-Built Survey — Site Works', type: 'dwg', size: '8.3 MB', date: '02 Feb 2026', linked: ['CVL-001','CVL-002'] },
+];
+
+const CLASHES = [
+  { id: 'CLH-001', desc: 'Duct penetrates beam at L12', elements: ['MEP-HVAC-001','COL-001'], severity: 'high', discipline: 'STR ↔ MEP' },
+  { id: 'CLH-002', desc: 'Pipe clashes with column C7 at L08', elements: ['MEP-PLB-001','COL-001'], severity: 'high', discipline: 'STR ↔ MEP' },
+  { id: 'CLH-003', desc: 'Cable tray overlaps duct at L15', elements: ['MEP-ELEC-001','MEP-HVAC-001'], severity: 'med', discipline: 'MEP ↔ MEP' },
+  { id: 'CLH-004', desc: 'Curtain wall mullion hits slab edge', elements: ['CWT-001','SLB-001'], severity: 'med', discipline: 'ARCH ↔ STR' },
+  { id: 'CLH-005', desc: 'Fire riser clashes with stair landing', elements: ['MEP-PLB-001','WAL-001'], severity: 'high', discipline: 'MEP ↔ ARCH' },
+  { id: 'CLH-006', desc: 'Downpipe route through structural zone', elements: ['MEP-PLB-001','FDN-001'], severity: 'low', discipline: 'MEP ↔ CIV' },
+  { id: 'CLH-007', desc: 'AC condenser on unrated roof area', elements: ['MEP-HVAC-001','RFP-001'], severity: 'med', discipline: 'MEP ↔ ARCH' },
+  { id: 'CLH-008', desc: 'Window head clashes with beam soffit', elements: ['CWT-003','SLB-001'], severity: 'low', discipline: 'ARCH ↔ STR' },
+  { id: 'CLH-009', desc: 'Switchboard encroaches on corridor', elements: ['MEP-ELEC-001','WAL-001'], severity: 'med', discipline: 'MEP ↔ ARCH' },
+  { id: 'CLH-010', desc: 'Canopy steelwork vs facade bracket', elements: ['ENT-001','CWT-001'], severity: 'low', discipline: 'ARCH ↔ ARCH' },
+  { id: 'CLH-011', desc: 'Stormwater pipe vs footing', elements: ['CVL-002','FDN-001'], severity: 'high', discipline: 'CIV ↔ STR' },
+  { id: 'CLH-012', desc: 'BMS conduit route undefined at riser', elements: ['MEP-ELEC-001','WAL-001'], severity: 'low', discipline: 'MEP ↔ STR' },
+];
+
+// ═══════════════════════════════════════
+// THREE.JS SETUP
+// ═══════════════════════════════════════
+let scene, camera, renderer, controls, raycaster, mouse;
+let buildingGroup, sectionPlane;
+let clock = new THREE.Clock();
+let frameCount = 0, lastFpsTime = 0;
+
+function initThree() {
+  const canvas = document.getElementById('viewer-canvas');
+  const container = document.getElementById('viewer-container');
+
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0d1117);
+  scene.fog = new THREE.FogExp2(0x0d1117, 0.003);
+
+  camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.5, 500);
+  camera.position.set(60, 55, 70);
+
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+  renderer.setSize(container.clientWidth, container.clientHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.1;
+
+  controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.08;
+  controls.target.set(0, 40, 0);
+  controls.minDistance = 20;
+  controls.maxDistance = 200;
+  controls.maxPolarAngle = Math.PI * 0.48;
+
+  raycaster = new THREE.Raycaster();
+  mouse = new THREE.Vector2();
+
+  // Lights
+  const ambientLight = new THREE.AmbientLight(0x8899bb, 0.6);
+  scene.add(ambientLight);
+
+  const dirLight = new THREE.DirectionalLight(0xffeedd, 1.8);
+  dirLight.position.set(40, 80, 50);
+  dirLight.castShadow = true;
+  dirLight.shadow.mapSize.set(2048, 2048);
+  dirLight.shadow.camera.near = 10;
+  dirLight.shadow.camera.far = 200;
+  dirLight.shadow.camera.left = -60;
+  dirLight.shadow.camera.right = 60;
+  dirLight.shadow.camera.top = 60;
+  dirLight.shadow.camera.bottom = -60;
+  scene.add(dirLight);
+
+  const fillLight = new THREE.DirectionalLight(0xaabbff, 0.4);
+  fillLight.position.set(-30, 40, -40);
+  scene.add(fillLight);
+
+  const hemiLight = new THREE.HemisphereLight(0x88aacc, 0x445566, 0.3);
+  scene.add(hemiLight);
+
+  // Ground
+  const groundGeo = new THREE.PlaneGeometry(300, 300);
+  const groundMat = new THREE.MeshStandardMaterial({ color: 0x1a1f2e, roughness: 0.95, metalness: 0 });
+  const ground = new THREE.Mesh(groundGeo, groundMat);
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = -0.1;
+  ground.receiveShadow = true;
+  ground.userData.isGround = true;
+  scene.add(ground);
+
+  // Grid
+  const gridHelper = new THREE.GridHelper(200, 40, 0x2a3a52, 0x1a2236);
+  gridHelper.position.y = 0;
+  scene.add(gridHelper);
+
+  // Section plane
+  sectionPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 100);
+
+  buildBuilding();
+  setupEvents(container);
+  animate();
+
+  window.addEventListener('resize', () => {
+    camera.aspect = container.clientWidth / container.clientHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(container.clientWidth, container.clientHeight);
+  });
+}
+
+// ═══════════════════════════════════════
+// BUILD THE 3D MODEL
+// ═══════════════════════════════════════
+function buildBuilding() {
+  buildingGroup = new THREE.Group();
+  scene.add(buildingGroup);
+
+  const B = BUILDING_DATA;
+  const towerH = B.floors * B.floorHeight;
+
+  // Materials
+  const mats = {
+    glass: new THREE.MeshPhysicalMaterial({
+      color: 0x88bbdd, metalness: 0.1, roughness: 0.05,
+      transmission: 0.6, thickness: 0.5, transparent: true, opacity: 0.7,
+      side: THREE.DoubleSide
+    }),
+    concrete: new THREE.MeshStandardMaterial({ color: 0x9ca3af, roughness: 0.8, metalness: 0.05 }),
+    concreteDark: new THREE.MeshStandardMaterial({ color: 0x6b7280, roughness: 0.85, metalness: 0.05 }),
+    steel: new THREE.MeshStandardMaterial({ color: 0xb0b8c8, roughness: 0.3, metalness: 0.7 }),
+    greenRoof: new THREE.MeshStandardMaterial({ color: 0x22c55e, roughness: 0.9, metalness: 0 }),
+    podiumGlass: new THREE.MeshPhysicalMaterial({
+      color: 0xaaccdd, metalness: 0.05, roughness: 0.1,
+      transmission: 0.5, transparent: true, opacity: 0.6,
+    }),
+    mullion: new THREE.MeshStandardMaterial({ color: 0xd1d5db, roughness: 0.3, metalness: 0.6 }),
+    roofMembrane: new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.9, metalness: 0.05 }),
+    progressComplete: new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.5, metalness: 0.1 }),
+    progressInProgress: new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.5, metalness: 0.1 }),
+    progressPlanned: new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.5, metalness: 0.1 }),
+    progressDelayed: new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.5, metalness: 0.1 }),
+    progressNotStarted: new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.5, metalness: 0.1 }),
+    highlight: new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.3, metalness: 0.3, emissive: 0x1e40af, emissiveIntensity: 0.3 }),
+    iotWarn: new THREE.MeshStandardMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.5, emissive: 0xf59e0b, emissiveIntensity: 0.3 }),
+    iotDanger: new THREE.MeshStandardMaterial({ color: 0xef4444, transparent: true, opacity: 0.5, emissive: 0xef4444, emissiveIntensity: 0.4 }),
+  };
+  window._mats = mats;
+
+  function addPart(mesh, elemId, originalMat) {
+    mesh.userData.elemId = elemId;
+    mesh.userData.originalMat = originalMat || mesh.material;
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    buildingGroup.add(mesh);
+    state.buildingParts.push(mesh);
+    return mesh;
+  }
+
+  // Foundation
+  const fdnGeo = new THREE.BoxGeometry(B.width + 4, 2, B.depth + 4);
+  const fdn = new THREE.Mesh(fdnGeo, mats.concreteDark);
+  fdn.position.set(0, -1, 0);
+  addPart(fdn, 'FDN-001', mats.concreteDark);
+
+  // Core walls (simplified as box)
+  const coreGeo = new THREE.BoxGeometry(6, towerH, 6);
+  const core = new THREE.Mesh(coreGeo, mats.concrete);
+  core.position.set(0, towerH / 2, 0);
+  addPart(core, 'WAL-001', mats.concrete);
+
+  // Floor slabs
+  for (let i = 0; i <= B.floors; i++) {
+    const y = i * B.floorHeight;
+    const slabGeo = new THREE.BoxGeometry(B.width, 0.3, B.depth);
+    const slab = new THREE.Mesh(slabGeo, mats.concrete);
+    slab.position.set(0, y, 0);
+    addPart(slab, 'SLB-001', mats.concrete);
+  }
+
+  // Columns (corners + mid)
+  const colPositions = [
+    [-B.width/2 + 1, -B.depth/2 + 1], [B.width/2 - 1, -B.depth/2 + 1],
+    [-B.width/2 + 1, B.depth/2 - 1], [B.width/2 - 1, B.depth/2 - 1],
+    [0, -B.depth/2 + 1], [0, B.depth/2 - 1],
+    [-B.width/2 + 1, 0], [B.width/2 - 1, 0],
+  ];
+  colPositions.forEach(([x, z]) => {
+    const colGeo = new THREE.BoxGeometry(0.6, towerH, 0.6);
+    const col = new THREE.Mesh(colGeo, mats.concrete);
+    col.position.set(x, towerH / 2, z);
+    addPart(col, 'COL-001', mats.concrete);
+  });
+
+  // Curtain walls with mullions
+  const wallDefs = [
+    { id: 'CWT-001', axis: 'z', pos: [0, towerH/2, -B.depth/2], size: [B.width, towerH, 0.15] },
+    { id: 'CWT-002', axis: 'x', pos: [B.width/2, towerH/2, 0], size: [0.15, towerH, B.depth] },
+    { id: 'CWT-003', axis: 'z', pos: [0, towerH/2, B.depth/2], size: [B.width, towerH, 0.15] },
+    { id: 'CWT-004', axis: 'x', pos: [-B.width/2, towerH/2, 0], size: [0.15, towerH, B.depth] },
+  ];
+  wallDefs.forEach(w => {
+    const wallGeo = new THREE.BoxGeometry(...w.size);
+    const wall = new THREE.Mesh(wallGeo, mats.glass);
+    wall.position.set(...w.pos);
+    addPart(wall, w.id, mats.glass);
+
+    // Horizontal mullions
+    const mullionCount = B.floors;
+    for (let i = 0; i <= mullionCount; i++) {
+      const my = i * B.floorHeight;
+      const isX = w.axis === 'x';
+      const mGeo = new THREE.BoxGeometry(
+        isX ? 0.2 : B.width + 0.1,
+        0.08,
+        isX ? B.depth + 0.1 : 0.2
+      );
+      const mullion = new THREE.Mesh(mGeo, mats.mullion);
+      mullion.position.set(w.pos[0], my, w.pos[2]);
+      if (isX) mullion.position.x += (w.pos[0] > 0 ? 0.05 : -0.05);
+      else mullion.position.z += (w.pos[2] > 0 ? 0.05 : -0.05);
+      buildingGroup.add(mullion);
+      mullion.userData.elemId = w.id;
+      mullion.userData.isMullion = true;
+    }
+
+    // Vertical mullions
+    const span = w.axis === 'x' ? B.depth : B.width;
+    const vCount = Math.floor(span / 1.5);
+    for (let i = 0; i <= vCount; i++) {
+      const offset = -span/2 + i * (span / vCount);
+      const vGeo = new THREE.BoxGeometry(
+        w.axis === 'x' ? 0.2 : 0.06,
+        towerH,
+        w.axis === 'x' ? 0.06 : 0.2
+      );
+      const vmullion = new THREE.Mesh(vGeo, mats.mullion);
+      if (w.axis === 'x') {
+        vmullion.position.set(w.pos[0] + (w.pos[0] > 0 ? 0.05 : -0.05), towerH/2, offset);
+      } else {
+        vmullion.position.set(offset, towerH/2, w.pos[2] + (w.pos[2] > 0 ? 0.05 : -0.05));
+      }
+      buildingGroup.add(vmullion);
+      vmullion.userData.elemId = w.id;
+      vmullion.userData.isMullion = true;
+    }
+  });
+
+  // Tower roof
+  const roofGeo = new THREE.BoxGeometry(B.width + 0.5, 0.8, B.depth + 0.5);
+  const roof = new THREE.Mesh(roofGeo, mats.roofMembrane);
+  roof.position.set(0, towerH + 0.4, 0);
+  addPart(roof, 'RFT-001', mats.roofMembrane);
+
+  // Roof parapet
+  const paraGeo = new THREE.BoxGeometry(B.width + 1, 1.2, B.depth + 1);
+  const paraInner = new THREE.BoxGeometry(B.width - 0.3, 1.3, B.depth - 0.3);
+  // Simple parapet as outline boxes
+  const parapet = new THREE.Mesh(paraGeo, mats.concrete);
+  parapet.position.set(0, towerH + 1.4, 0);
+  addPart(parapet, 'RFT-001', mats.concrete);
+
+  // Roof mechanical (plant room box)
+  const plantGeo = new THREE.BoxGeometry(8, 4, 6);
+  const plant = new THREE.Mesh(plantGeo, mats.concreteDark);
+  plant.position.set(0, towerH + 2.8, 0);
+  addPart(plant, 'MEP-HVAC-001', mats.concreteDark);
+
+  // ── PODIUM ──
+  const podH = B.podiumFloors * B.floorHeight;
+  const podW = B.width + B.podiumExtendX;
+  const podD = B.depth + B.podiumExtendZ;
+
+  // Podium slab
+  const podSlabGeo = new THREE.BoxGeometry(podW, podH, podD);
+  const podSlab = new THREE.Mesh(podSlabGeo, mats.concrete);
+  podSlab.position.set(B.podiumExtendX / 2, podH / 2, B.podiumExtendZ / 2);
+  addPart(podSlab, 'POD-001', mats.concrete);
+
+  // Podium glass facades
+  const podGlassN = new THREE.Mesh(
+    new THREE.BoxGeometry(podW, podH, 0.1), mats.podiumGlass
+  );
+  podGlassN.position.set(B.podiumExtendX/2, podH/2, -B.depth/2 - B.podiumExtendZ/2 + podD/2);
+  addPart(podGlassN, 'POD-001', mats.podiumGlass);
+
+  const podGlassE = new THREE.Mesh(
+    new THREE.BoxGeometry(0.1, podH, podD), mats.podiumGlass
+  );
+  podGlassE.position.set(B.width/2 + B.podiumExtendX, podH/2, B.podiumExtendZ/2);
+  addPart(podGlassE, 'POD-001', mats.podiumGlass);
+
+  // Green roofs on podium
+  const grW = (podW - B.width) / 2 + 2;
+  const grD = podD / 2;
+  [1, -1].forEach(side => {
+    const grGeo = new THREE.BoxGeometry(grW - 1, 0.3, grD - 1);
+    const gr = new THREE.Mesh(grGeo, mats.greenRoof);
+    gr.position.set(B.width/2 + grW/2, podH + 0.15, side * grD/2 + B.podiumExtendZ/4);
+    addPart(gr, 'RFP-001', mats.greenRoof);
+  });
+
+  // Entry canopy
+  const canopyGeo = new THREE.BoxGeometry(8, 0.15, 6);
+  const canopy = new THREE.Mesh(canopyGeo, mats.glass);
+  canopy.position.set(0, 4.5, -B.depth/2 - 3);
+  addPart(canopy, 'ENT-001', mats.glass);
+
+  // Canopy supports
+  [-3, 3].forEach(x => {
+    const supGeo = new THREE.CylinderGeometry(0.12, 0.12, 4.5, 8);
+    const sup = new THREE.Mesh(supGeo, mats.steel);
+    sup.position.set(x, 2.25, -B.depth/2 - 5.5);
+    addPart(sup, 'ENT-001', mats.steel);
+  });
+}
+
+// ═══════════════════════════════════════
+// INTERACTION EVENTS
+// ═══════════════════════════════════════
+function setupEvents(container) {
+  container.addEventListener('click', onViewerClick);
+  container.addEventListener('contextmenu', onContextMenu);
+  container.addEventListener('mousemove', onMouseMove);
+  document.addEventListener('click', () => {
+    document.getElementById('context-menu').style.display = 'none';
+  });
+  document.addEventListener('keydown', onKeyDown);
+}
+
+function onViewerClick(e) {
+  if (e.button !== 0) return;
+  const container = document.getElementById('viewer-container');
+  const rect = container.getBoundingClientRect();
+  mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+  mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+  raycaster.setFromCamera(mouse, camera);
+
+  const intersectable = state.buildingParts.filter(m => m.visible && !state.hiddenObjects.has(m));
+  const hits = raycaster.intersectObjects(intersectable, false);
+
+  if (hits.length > 0) {
+    const hit = hits[0].object;
+    if (hit.userData.isGround) { deselectAll(); return; }
+    selectObject(hit);
+  } else {
+    deselectAll();
+  }
+}
+
+function onMouseMove(e) {
+  const container = document.getElementById('viewer-container');
+  const rect = container.getBoundingClientRect();
+  mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+  mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+  raycaster.setFromCamera(mouse, camera);
+  const intersectable = state.buildingParts.filter(m => m.visible && !state.hiddenObjects.has(m));
+  const hits = raycaster.intersectObjects(intersectable, false);
+
+  const tooltip = document.getElementById('sel-tooltip');
+  if (hits.length > 0 && !hits[0].object.userData.isGround) {
+    const hit = hits[0].object;
+    const elem = ELEMENT_DB.find(el => el.id === hit.userData.elemId);
+    if (elem) {
+      tooltip.style.display = 'block';
+      tooltip.style.left = (e.clientX - rect.left + 15) + 'px';
+      tooltip.style.top = (e.clientY - rect.top - 10) + 'px';
+      tooltip.querySelector('.sel-name').textContent = elem.name;
+      tooltip.querySelector('.sel-type').textContent = `${elem.category} — ${elem.id}`;
+    }
+  } else {
+    tooltip.style.display = 'none';
+  }
+}
+
+function onContextMenu(e) {
+  e.preventDefault();
+  const menu = document.getElementById('context-menu');
+  menu.style.display = 'block';
+  menu.style.left = e.clientX + 'px';
+  menu.style.top = e.clientY + 'px';
+}
+
+function onKeyDown(e) {
+  switch(e.key.toLowerCase()) {
+    case 'i': toggleIsolate(); break;
+    case 'h': ctxAction('hide'); break;
+    case 's': if (!e.ctrlKey) ctxAction('showall'); break;
+    case 'f': ctxAction('focus'); break;
+    case 'escape': deselectAll(); ctxAction('showall'); break;
+  }
+}
+
+function selectObject(mesh) {
+  deselectAll();
+  state.selectedObject = mesh;
+  const allWithSameId = state.buildingParts.filter(p => p.userData.elemId === mesh.userData.elemId);
+  allWithSameId.forEach(p => {
+    p.material = window._mats.highlight;
+  });
+
+  const elem = ELEMENT_DB.find(el => el.id === mesh.userData.elemId);
+  if (elem) {
+    showProperties(elem);
+    highlightTreeItem(elem.id);
+    document.getElementById('status-selection').textContent = `Selected: ${elem.name}`;
+  }
+}
+
+function deselectAll() {
+  if (state.selectedObject) {
+    const oldId = state.selectedObject.userData.elemId;
+    state.buildingParts.filter(p => p.userData.elemId === oldId).forEach(p => {
+      if (state.progressOverlay) {
+        applyProgressMat(p);
+      } else if (state.iotOverlay) {
+        applyIoTMat(p);
+      } else {
+        p.material = p.userData.originalMat;
+      }
+    });
+  }
+  state.selectedObject = null;
+  document.getElementById('status-selection').textContent = 'No selection';
+  document.querySelectorAll('.tree-item.selected').forEach(el => el.classList.remove('selected'));
+}
+
+// ═══════════════════════════════════════
+// TOOLBAR ACTIONS
+// ═══════════════════════════════════════
+window.setNavMode = function(mode) {
+  state.navMode = mode;
+  document.querySelectorAll('#btn-orbit,#btn-pan,#btn-select').forEach(b => b.classList.remove('active'));
+  document.getElementById('btn-' + (mode === 'select' ? 'select' : mode)).classList.add('active');
+  document.getElementById('nav-mode-display').textContent = mode.charAt(0).toUpperCase() + mode.slice(1);
+
+  if (mode === 'pan') {
+    controls.mouseButtons.LEFT = THREE.MOUSE.PAN;
+  } else {
+    controls.mouseButtons.LEFT = THREE.MOUSE.ROTATE;
+  }
+};
+
+window.resetZoom = function() {
+  camera.position.set(60, 55, 70);
+  controls.target.set(0, 40, 0);
+  controls.update();
+  showToast('View reset to default', 'info');
+};
+
+window.toggleIsolate = function() {
+  const btn = document.getElementById('btn-isolate');
+  if (!state.selectedObject) { showToast('Select an element first', 'warning'); return; }
+
+  state.isolateMode = !state.isolateMode;
+  btn.classList.toggle('active', state.isolateMode);
+
+  if (state.isolateMode) {
+    const selectedId = state.selectedObject.userData.elemId;
+    state.buildingParts.forEach(p => {
+      if (p.userData.elemId !== selectedId) {
+        p.visible = false;
+      }
+    });
+    showToast('Element isolated', 'info');
+  } else {
+    state.buildingParts.forEach(p => {
+      if (!state.hiddenObjects.has(p)) p.visible = true;
+    });
+    showToast('Isolation cleared', 'info');
+  }
+};
+
+window.toggleSection = function() {
+  state.sectionActive = !state.sectionActive;
+  const btn = document.getElementById('btn-section');
+  const indicator = document.getElementById('section-indicator');
+  btn.classList.toggle('active', state.sectionActive);
+  indicator.style.display = state.sectionActive ? 'block' : 'none';
+
+  if (state.sectionActive) {
+    renderer.clippingPlanes = [sectionPlane];
+    renderer.localClippingEnabled = true;
+    showToast('Section plane enabled — scroll to adjust height', 'info');
+
+    // Adjust section with scroll
+    const handler = (e) => {
+      if (!state.sectionActive) return;
+      sectionPlane.constant += e.deltaY * 0.1;
+      sectionPlane.constant = Math.max(0, Math.min(120, sectionPlane.constant));
+    };
+    document.getElementById('viewer-container').addEventListener('wheel', handler, { passive: true });
+    window._sectionScrollHandler = handler;
+  } else {
+    renderer.clippingPlanes = [];
+    renderer.localClippingEnabled = false;
+    sectionPlane.constant = 100;
+  }
+};
+
+window.toggleExplode = function() {
+  state.explodeActive = !state.explodeActive;
+  document.getElementById('btn-explode').classList.toggle('active', state.explodeActive);
+
+  if (state.explodeActive) {
+    animateExplode(1);
+    showToast('Exploded view enabled', 'info');
+  } else {
+    animateExplode(0);
+  }
+};
+
+function animateExplode(targetFactor) {
+  const start = state.explodeFactor;
+  const startTime = performance.now();
+  const duration = 600;
+  const centers = {};
+
+  state.buildingParts.forEach(p => {
+    if (!p.userData._originalPos) p.userData._originalPos = p.position.clone();
+  });
+
+  function step(now) {
+    const t = Math.min((now - startTime) / duration, 1);
+    const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+    state.explodeFactor = start + (targetFactor - start) * ease;
+
+    state.buildingParts.forEach(p => {
+      const orig = p.userData._originalPos;
+      const dir = orig.clone().sub(new THREE.Vector3(0, 40, 0)).normalize();
+      p.position.copy(orig.clone().add(dir.multiplyScalar(state.explodeFactor * 15)));
+    });
+
+    if (t < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+window.toggleMeasure = function() {
+  state.measureActive = !state.measureActive;
+  document.getElementById('btn-measure').classList.toggle('active', state.measureActive);
+  showToast(state.measureActive ? 'Click two points to measure distance' : 'Measure tool deactivated', 'info');
+};
+
+window.toggleProgressOverlay = function() {
+  state.progressOverlay = !state.progressOverlay;
+  if (state.progressOverlay) state.iotOverlay = false;
+  document.getElementById('btn-progress').classList.toggle('active', state.progressOverlay);
+  document.getElementById('btn-iot').classList.remove('active');
+  document.getElementById('progress-panel').style.display = state.progressOverlay ? 'block' : 'none';
+
+  state.buildingParts.forEach(p => {
+    if (state.progressOverlay) {
+      applyProgressMat(p);
+    } else {
+      p.material = p.userData.originalMat;
+    }
+  });
+
+  if (state.progressOverlay) showToast('Progress overlay active', 'success');
+};
+
+function applyProgressMat(mesh) {
+  const elem = ELEMENT_DB.find(el => el.id === mesh.userData.elemId);
+  if (!elem) return;
+  const m = window._mats;
+  if (elem.progress >= 90) mesh.material = m.progressComplete;
+  else if (elem.progress >= 30) mesh.material = m.progressInProgress;
+  else if (elem.progress >= 10) mesh.material = m.progressPlanned;
+  else if (elem.status === 'Delayed') mesh.material = m.progressDelayed;
+  else mesh.material = m.progressNotStarted;
+}
+
+window.toggleIoTOverlay = function() {
+  state.iotOverlay = !state.iotOverlay;
+  if (state.iotOverlay) state.progressOverlay = false;
+  document.getElementById('btn-iot').classList.toggle('active', state.iotOverlay);
+  document.getElementById('btn-progress').classList.remove('active');
+  document.getElementById('progress-panel').style.display = 'none';
+
+  state.buildingParts.forEach(p => {
+    if (state.iotOverlay) {
+      applyIoTMat(p);
+    } else {
+      p.material = p.userData.originalMat;
+    }
+  });
+
+  if (state.iotOverlay) {
+    switchRightTab('iot');
+    showToast('IoT sensor overlay active', 'success');
+  }
+};
+
+function applyIoTMat(mesh) {
+  mesh.material = mesh.userData.originalMat;
+  // Highlight floors with bad sensor readings
+  const m = window._mats;
+  const elem = ELEMENT_DB.find(el => el.id === mesh.userData.elemId);
+  if (!elem) return;
+
+  // Check if any danger/warn sensors affect this element's zone
+  IOT_SENSORS.forEach(s => {
+    if (s.status === 'danger' && (elem.level === s.zone || elem.level === 'Multi')) {
+      mesh.material = m.iotDanger;
+    } else if (s.status === 'warn' && (elem.level === s.zone || (elem.level === 'Multi' && s.zone.includes('12')))) {
+      if (mesh.material !== m.iotDanger) mesh.material = m.iotWarn;
+    }
+  });
+}
+
+window.toggleModel = function(discipline) {
+  state.models[discipline] = !state.models[discipline];
+  const badge = document.querySelector(`.model-badge.${discipline}`);
+  badge.classList.toggle('inactive', !state.models[discipline]);
+
+  state.buildingParts.forEach(p => {
+    const elem = ELEMENT_DB.find(el => el.id === p.userData.elemId);
+    if (elem && elem.discipline === discipline) {
+      p.visible = state.models[discipline];
+    }
+  });
+};
+
+window.ctxAction = function(action) {
+  document.getElementById('context-menu').style.display = 'none';
+  switch(action) {
+    case 'isolate': toggleIsolate(); break;
+    case 'hide':
+      if (state.selectedObject) {
+        const id = state.selectedObject.userData.elemId;
+        state.buildingParts.filter(p => p.userData.elemId === id).forEach(p => {
+          p.visible = false;
+          state.hiddenObjects.add(p);
+        });
+        deselectAll();
+        showToast('Element hidden', 'info');
+      }
+      break;
+    case 'showall':
+      state.buildingParts.forEach(p => { p.visible = true; });
+      state.hiddenObjects.clear();
+      state.isolateMode = false;
+      document.getElementById('btn-isolate').classList.remove('active');
+      showToast('All elements visible', 'info');
+      break;
+    case 'focus':
+      if (state.selectedObject) {
+        const pos = state.selectedObject.position;
+        controls.target.copy(pos);
+        camera.position.set(pos.x + 30, pos.y + 15, pos.z + 30);
+        controls.update();
+      }
+      break;
+    case 'properties':
+      switchRightTab('props');
+      break;
+  }
+};
+
+// ═══════════════════════════════════════
+// PANEL MANAGEMENT
+// ═══════════════════════════════════════
+window.togglePanel = function(side) {
+  const panel = document.getElementById('panel-' + side);
+  panel.classList.toggle('collapsed');
+};
+
+window.switchLeftTab = function(tab) {
+  document.querySelectorAll('.panel-left .panel-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel-left [id^="left-tab-"]').forEach(t => t.style.display = 'none');
+  event.target.classList.add('active');
+  document.getElementById('left-tab-' + tab).style.display = '';
+};
+
+window.switchRightTab = function(tab) {
+  document.querySelectorAll('.panel-right .panel-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel-right [id^="right-tab-"]').forEach(t => t.style.display = 'none');
+  document.querySelectorAll('.panel-right .panel-tab').forEach(t => {
+    if (t.textContent.toLowerCase().includes(tab.substring(0,3))) t.classList.add('active');
+  });
+  document.getElementById('right-tab-' + tab).style.display = '';
+};
+
+// ═══════════════════════════════════════
+// PROPERTIES PANEL
+// ═══════════════════════════════════════
+function showProperties(elem) {
+  switchRightTab('props');
+  const container = document.getElementById('props-content');
+
+  const progressColor = elem.progress >= 90 ? 'var(--success)' : elem.progress >= 30 ? 'var(--accent)' : elem.progress >= 10 ? 'var(--warning)' : 'var(--text-muted)';
+
+  container.innerHTML = `
+    <div class="prop-section">
+      <div class="prop-section-title">Identity</div>
+      <div class="prop-row"><span class="prop-key">Element ID</span><span class="prop-val">${elem.id}</span></div>
+      <div class="prop-row"><span class="prop-key">Name</span><span class="prop-val">${elem.name}</span></div>
+      <div class="prop-row"><span class="prop-key">Category</span><span class="prop-val">${elem.category}</span></div>
+      <div class="prop-row"><span class="prop-key">Type</span><span class="prop-val">${elem.type}</span></div>
+    </div>
+    <div class="prop-section">
+      <div class="prop-section-title">Location</div>
+      <div class="prop-row"><span class="prop-key">Level</span><span class="prop-val">${elem.level}</span></div>
+      <div class="prop-row"><span class="prop-key">Discipline</span><span class="prop-val">${elem.discipline.toUpperCase()}</span></div>
+    </div>
+    <div class="prop-section">
+      <div class="prop-section-title">Material</div>
+      <div class="prop-row"><span class="prop-key">Primary Material</span><span class="prop-val">${elem.material}</span></div>
+    </div>
+    <div class="prop-section">
+      <div class="prop-section-title">Progress</div>
+      <div class="prop-row"><span class="prop-key">Status</span><span class="prop-val" style="color:${progressColor}">${elem.status}</span></div>
+      <div class="prop-row"><span class="prop-key">Completion</span><span class="prop-val" style="color:${progressColor}">${elem.progress}%</span></div>
+      <div style="padding:4px 8px;">
+        <div class="iot-bar"><div class="iot-bar-fill" style="width:${elem.progress}%;background:${progressColor}"></div></div>
+      </div>
+    </div>
+    <div class="prop-section">
+      <div class="prop-section-title">Linked Documents (${DOCUMENTS.filter(d => d.linked.includes(elem.id)).length})</div>
+      ${DOCUMENTS.filter(d => d.linked.includes(elem.id)).map(d => `
+        <div class="doc-card" onclick="switchRightTab('docs')">
+          <div class="doc-icon ${d.type}">${d.type.toUpperCase()}</div>
+          <div class="doc-info">
+            <h4>${d.name}</h4>
+            <p>${d.size} · ${d.date}</p>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════
+// MODEL TREE
+// ═══════════════════════════════════════
+function buildModelTree() {
+  const categories = {};
+  ELEMENT_DB.forEach(elem => {
+    if (!categories[elem.category]) categories[elem.category] = [];
+    categories[elem.category].push(elem);
+  });
+
+  const container = document.getElementById('model-tree');
+  let html = '';
+  Object.entries(categories).forEach(([cat, elements]) => {
+    html += `
+      <div class="tree-item" onclick="toggleTreeChildren('${cat}', this)">
+        <svg class="expand-arrow open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+        <span>${cat}</span>
+        <span style="margin-left:auto;font-size:10px;color:var(--text-muted)">${elements.length}</span>
+      </div>
+      <div class="tree-children" id="tree-cat-${cat.replace(/\s/g,'-')}">
+        ${elements.map(el => `
+          <div class="tree-item" data-elem-id="${el.id}" onclick="selectTreeItem('${el.id}')">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+            <span>${el.name}</span>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  });
+  container.innerHTML = html;
+}
+
+window.toggleTreeChildren = function(catOrId, el) {
+  let children = document.getElementById('tree-cat-' + catOrId);
+  if (!children) children = document.getElementById('tree-cat-' + catOrId.replace(/\s/g, '-'));
+  if (!children) children = document.getElementById(catOrId);
+  if (!children) return;
+  const arrow = el.querySelector('.expand-arrow');
+  children.classList.toggle('collapsed');
+  if (arrow) arrow.classList.toggle('open');
+};
+
+window.selectTreeItem = function(elemId) {
+  const mesh = state.buildingParts.find(p => p.userData.elemId === elemId);
+  if (mesh) selectObject(mesh);
+};
+
+function highlightTreeItem(elemId) {
+  document.querySelectorAll('.tree-item.selected').forEach(el => el.classList.remove('selected'));
+  const item = document.querySelector(`.tree-item[data-elem-id="${elemId}"]`);
+  if (item) {
+    item.classList.add('selected');
+    item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+window.filterTree = function() {
+  const query = document.getElementById('tree-search').value.toLowerCase();
+  document.querySelectorAll('#model-tree .tree-item[data-elem-id]').forEach(item => {
+    const text = item.textContent.toLowerCase();
+    item.style.display = text.includes(query) ? '' : 'none';
+  });
+};
+
+// ═══════════════════════════════════════
+// IOT PANEL
+// ═══════════════════════════════════════
+function buildIoTPanel() {
+  const container = document.getElementById('iot-content');
+  container.innerHTML = IOT_SENSORS.map(s => {
+    const pct = (s.value / s.max) * 100;
+    const barColor = s.status === 'danger' ? 'var(--danger)' : s.status === 'warn' ? 'var(--warning)' : 'var(--success)';
+    return `
+      <div class="iot-card">
+        <div class="sensor-header">
+          <span class="sensor-name">${s.name}</span>
+          <span class="sensor-status ${s.status}"></span>
+        </div>
+        <div class="iot-value" style="color:${barColor}">${s.value}<span class="iot-unit">${s.unit}</span></div>
+        <div class="iot-bar"><div class="iot-bar-fill" style="width:${pct}%;background:${barColor}"></div></div>
+        <div class="iot-meta">
+          <span>Threshold: ${s.threshold} ${s.unit}</span>
+          <span>Zone: ${s.zone}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// Simulate live updates
+function updateIoTValues() {
+  IOT_SENSORS.forEach(s => {
+    s.value += (Math.random() - 0.48) * (s.max * 0.02);
+    s.value = Math.max(0, Math.min(s.max, parseFloat(s.value.toFixed(1))));
+    s.status = s.value > s.threshold * 1.2 ? 'danger' : s.value > s.threshold ? 'warn' : 'ok';
+  });
+  buildIoTPanel();
+  if (state.iotOverlay) {
+    state.buildingParts.forEach(p => {
+      if (state.selectedObject && p.userData.elemId === state.selectedObject.userData.elemId) return;
+      applyIoTMat(p);
+    });
+  }
+}
+
+// ═══════════════════════════════════════
+// DOCUMENTS PANEL
+// ═══════════════════════════════════════
+function buildDocsPanel() {
+  const container = document.getElementById('docs-content');
+  container.innerHTML = DOCUMENTS.map(d => `
+    <div class="doc-card">
+      <div class="doc-icon ${d.type}">${d.type.toUpperCase()}</div>
+      <div class="doc-info">
+        <h4>${d.name}</h4>
+        <p>${d.size} · ${d.date} · ${d.linked.length ? 'Linked to ' + d.linked.length + ' element(s)' : 'General'}</p>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════
+// CLASHES PANEL
+// ═══════════════════════════════════════
+function buildClashesPanel() {
+  const container = document.getElementById('clash-list');
+  container.innerHTML = CLASHES.map(c => `
+    <div class="clash-item" onclick="selectTreeItem('${c.elements[0]}')">
+      <div class="clash-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </div>
+      <div class="clash-info">
+        <h4>${c.id}: ${c.desc}</h4>
+        <p>${c.discipline} · <span class="clash-severity ${c.severity}">${c.severity}</span></p>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════
+// TOAST NOTIFICATIONS
+// ═══════════════════════════════════════
+function showToast(msg, type = 'info') {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.innerHTML = msg;
+  container.appendChild(toast);
+  setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity .3s'; }, 2500);
+  setTimeout(() => toast.remove(), 2900);
+}
+window.showToast = showToast;
+
+// ═══════════════════════════════════════
+// ANIMATION LOOP
+// ═══════════════════════════════════════
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+
+  // FPS counter
+  frameCount++;
+  const now = performance.now();
+  if (now - lastFpsTime >= 1000) {
+    document.getElementById('fps-display').textContent = frameCount + ' FPS';
+    frameCount = 0;
+    lastFpsTime = now;
+  }
+}
+
+// ═══════════════════════════════════════
+// LOGIN
+// ═══════════════════════════════════════
+window.doLogin = function() {
+  state.user = document.getElementById('login-user').value;
+  state.role = document.getElementById('login-role').value;
+  state.project = document.getElementById('login-project').value;
+
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('app').classList.add('active');
+
+  document.getElementById('topbar-user').textContent = state.user;
+  document.getElementById('topbar-project').textContent = state.project;
+  const roleTag = document.getElementById('topbar-role');
+  roleTag.textContent = state.role.charAt(0).toUpperCase() + state.role.slice(1);
+  roleTag.className = 'role-tag ' + state.role;
+
+  // Role-based restrictions
+  if (state.role === 'client') {
+    document.getElementById('btn-section').style.display = 'none';
+    document.getElementById('btn-explode').style.display = 'none';
+    document.getElementById('btn-measure').style.display = 'none';
+    document.querySelectorAll('.panel-left .panel-tab')[2].style.display = 'none'; // Clashes
+    showToast('Welcome! View-only access for client review.', 'info');
+  } else if (state.role === 'manager') {
+    showToast('Site Manager view — IoT sensors active.', 'info');
+    toggleIoTOverlay();
+  } else {
+    showToast(`Signed in as ${state.user} (${state.role})`, 'success');
+  }
+
+  initThree();
+};
+
+window.doLogout = function() {
+  document.getElementById('app').classList.remove('active');
+  document.getElementById('login-screen').classList.remove('hidden');
+};
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+function init() {
+  // Simulate loading
+  const fill = document.getElementById('loader-fill');
+  let progress = 0;
+  const loadInterval = setInterval(() => {
+    progress += Math.random() * 15 + 5;
+    if (progress >= 100) {
+      progress = 100;
+      clearInterval(loadInterval);
+      setTimeout(() => {
+        document.getElementById('loader').classList.add('hidden');
+        document.getElementById('login-screen').classList.remove('hidden');
+      }, 400);
+    }
+    fill.style.width = progress + '%';
+  }, 200);
+
+  // Build panels
+  buildModelTree();
+  buildIoTPanel();
+  buildDocsPanel();
+  buildClashesPanel();
+
+  // Live IoT updates
+  setInterval(updateIoTValues, 3000);
+}
+
+init();
+
+// ═══════════════════════════════════════
+// UPLOAD MODEL PROCESSING (Three.js module)
+// ═══════════════════════════════════════
+const loaderCache = {};
+
+async function getLoader(ext) {
+  if (loaderCache[ext]) return loaderCache[ext];
+  
+  let loader;
+  
+  try {
+    switch (ext) {
+      case 'obj': {
+        const mod = await import('three/addons/loaders/OBJLoader.js');
+        loader = new mod.OBJLoader();
+        break;
+      }
+      case 'stl': {
+        const mod = await import('three/addons/loaders/STLLoader.js');
+        loader = new mod.STLLoader();
+        break;
+      }
+      case 'gltf':
+      case 'glb': {
+        const mod = await import('three/addons/loaders/GLTFLoader.js');
+        loader = new mod.GLTFLoader();
+        break;
+      }
+      case 'fbx': {
+        const mod = await import('three/addons/loaders/FBXLoader.js');
+        loader = new mod.FBXLoader();
+        break;
+      }
+      case 'dae': {
+        const mod = await import('three/addons/loaders/ColladaLoader.js');
+        loader = new mod.ColladaLoader();
+        break;
+      }
+      case 'ply': {
+        const mod = await import('three/addons/loaders/PLYLoader.js');
+        loader = new mod.PLYLoader();
+        break;
+      }
+      default:
+        return null;
+    }
+  } catch (e) {
+    console.error(`Failed to load ${ext} parser:`, e);
+    throw new Error(`Could not load the .${ext} parser. Check your internet connection.`);
+  }
+  
+  loaderCache[ext] = loader;
+  return loader;
+}
+
+window.processUploadedModel = async function() {
+  var uploadedFile = window.getUploadedFile();
+  if (!uploadedFile) return;
+
+  function getFileExt(fn) { return fn.split('.').pop().toLowerCase(); }
+  const ext = getFileExt(uploadedFile.name);
+  const progressEl = document.getElementById('upload-progress');
+  const fillEl = document.getElementById('upload-progress-fill');
+  const labelEl = document.getElementById('upload-progress-label');
+  const pctEl = document.getElementById('upload-progress-pct');
+  const confirmBtn = document.getElementById('btn-upload-confirm');
+
+  fillEl.style.background = 'var(--accent)';
+  progressEl.classList.add('visible');
+  confirmBtn.disabled = true;
+
+  function setProgress(pct, label) {
+    fillEl.style.width = pct + '%';
+    pctEl.textContent = Math.round(pct) + '%';
+    if (label) labelEl.textContent = label;
+  }
+
+  function showError(msg) {
+    fillEl.style.background = 'var(--danger)';
+    fillEl.style.width = '100%';
+    pctEl.textContent = 'Error';
+    labelEl.textContent = '✗ ' + msg;
+    confirmBtn.disabled = false;
+    showToast(msg, 'warning');
+  }
+
+  // ── Handle .rvt files ──
+  if (ext === 'rvt') {
+    showError('Revit (.rvt) files require Autodesk Platform Services to convert.');
+    labelEl.textContent = '⚠ .rvt files need server-side conversion';
+    setTimeout(() => {
+      const helpHtml = `
+        <div style="font-size:12px;color:var(--text-secondary);margin-top:12px;padding:12px;background:var(--bg-tertiary);border-radius:6px;border:1px solid var(--border);">
+          <strong style="color:var(--warning);">Revit files need conversion before browser viewing:</strong>
+          <ol style="margin:8px 0 0 16px;line-height:1.8;">
+            <li><strong>Option A — Export from Revit:</strong><br>
+              File → Export → <strong>glTF/GLB</strong> (Revit 2023+) or use the free
+              <a href="https://apps.autodesk.com/RVT/en/Detail/Index?id=6193770166503453647" target="_blank" style="color:var(--accent);">glTF Exporter plugin</a>.
+              Then upload the .glb here.</li>
+            <li><strong>Option B — Export as IFC:</strong><br>
+              File → Export → <strong>IFC</strong> → Upload the .ifc file here (supported ✓)</li>
+            <li><strong>Option C — Autodesk Platform Services:</strong><br>
+              Use the <a href="https://aps.autodesk.com/en/docs/model-derivative/v2/tutorials/translate-source-file-to-svf2/" target="_blank" style="color:var(--accent);">Model Derivative API</a>
+              to convert .rvt to SVF2 for the Forge Viewer.</li>
+          </ol>
+        </div>`;
+      const body = document.querySelector('#upload-modal .modal-body');
+      const existingHelp = body.querySelector('.rvt-help');
+      if (existingHelp) existingHelp.remove();
+      const div = document.createElement('div');
+      div.className = 'rvt-help';
+      div.innerHTML = helpHtml;
+      body.appendChild(div);
+    }, 100);
+    return;
+  }
+
+  // ── Handle IFC files ──
+  if (ext === 'ifc') {
+    setProgress(5, 'Loading IFC engine (web-ifc)…');
+    try {
+      await loadIFCModel(uploadedFile, setProgress, showError);
+      return;
+    } catch (e) {
+      showError('IFC load failed: ' + (e.message || e));
+      return;
+    }
+  }
+
+  // ── Handle standard Three.js formats ──
+  setProgress(5, 'Loading parser for .' + ext + '…');
+
+  let loader;
+  try {
+    loader = await getLoader(ext);
+  } catch (e) {
+    showError('Failed to load .' + ext + ' parser: ' + e.message);
+    return;
+  }
+
+  if (!loader) {
+    showError('No parser available for .' + ext);
+    return;
+  }
+
+  setProgress(15, 'Reading file…');
+
+  const reader = new FileReader();
+  reader.onerror = () => showError('Failed to read file');
+  
+  reader.onload = async function(e) {
+    setProgress(40, 'Parsing geometry…');
+    const data = e.target.result;
+
+    try {
+      let loadedObj;
+      
+      if (ext === 'obj' || ext === 'dae') {
+        // Text-based formats
+        const text = typeof data === 'string' ? data : new TextDecoder().decode(data);
+        if (ext === 'obj') {
+          loadedObj = loader.parse(text);
+        } else {
+          loadedObj = loader.parse(text, '');
+        }
+      } else if (ext === 'stl' || ext === 'ply') {
+        // Returns BufferGeometry
+        const geom = loader.parse(data);
+        const mat = new THREE.MeshStandardMaterial({ color: 0x8899aa, roughness: 0.5, metalness: 0.2, side: THREE.DoubleSide });
+        loadedObj = new THREE.Mesh(geom, mat);
+      } else if (ext === 'glb' || ext === 'gltf') {
+        loadedObj = await new Promise((resolve, reject) => {
+          loader.parse(data, '', (gltf) => resolve(gltf), (err) => reject(err));
+        });
+        if (loadedObj.scene) loadedObj = loadedObj.scene;
+      } else if (ext === 'fbx') {
+        loadedObj = loader.parse(data);
+      } else {
+        showError('Parsing not implemented for .' + ext);
+        return;
+      }
+
+      setProgress(75, 'Preparing scene…');
+      addLoadedModelToScene(loadedObj, setProgress, uploadedFile.name);
+      
+    } catch (e) {
+      console.error('Parse error:', e);
+      showError('Parse error: ' + (e.message || 'Unknown error'));
+    }
+  };
+
+  // Read as appropriate type
+  if (['obj', 'dae', 'gltf'].includes(ext)) {
+    reader.readAsText(uploadedFile);
+  } else {
+    reader.readAsArrayBuffer(uploadedFile);
+  }
+};
+
+// ═══════════════════════════════════════
+// IFC LOADING (web-ifc)
+// ═══════════════════════════════════════
+async function loadIFCModel(file, setProgress, showError) {
+  setProgress(10, 'Initialising web-ifc engine…');
+
+  // Dynamically load web-ifc if not already loaded
+  if (!window.WebIFC) {
+    try {
+      await new Promise((resolve, reject) => {
+        // Check if already loaded via script tag
+        if (window.WebIFC) { resolve(); return; }
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/web-ifc@0.0.57/web-ifc-api-iife.js';
+        script.onload = () => {
+          // web-ifc-api-iife exposes on window
+          setTimeout(resolve, 200);
+        };
+        script.onerror = () => reject(new Error('Failed to load web-ifc library'));
+        document.head.appendChild(script);
+      });
+    } catch (e) {
+      showError('Could not load IFC engine. Check internet connection.');
+      return;
+    }
+  }
+
+  setProgress(20, 'Starting IFC API…');
+  
+  const ifcAPI = new window.WebIFC.IfcAPI();
+  
+  // Set WASM path
+  ifcAPI.SetWasmPath('https://cdn.jsdelivr.net/npm/web-ifc@0.0.57/');
+
+  try {
+    await ifcAPI.Init();
+  } catch (e) {
+    showError('Failed to initialise IFC engine: ' + e.message);
+    return;
+  }
+
+  setProgress(30, 'Reading IFC file…');
+  
+  const data = await file.arrayBuffer();
+  const uint8 = new Uint8Array(data);
+
+  setProgress(40, 'Parsing IFC schema…');
+
+  let modelID;
+  try {
+    modelID = ifcAPI.OpenModel(uint8);
+  } catch (e) {
+    showError('Failed to parse IFC file: ' + e.message);
+    return;
+  }
+
+  setProgress(50, 'Extracting geometry…');
+
+  const group = new THREE.Group();
+  group.name = file.name;
+
+  // Default material
+  const defaultMat = new THREE.MeshStandardMaterial({
+    color: 0xaabbcc, roughness: 0.6, metalness: 0.1, side: THREE.DoubleSide
+  });
+
+  // Material palette for IFC categories
+  const ifcMaterials = {
+    wall: new THREE.MeshStandardMaterial({ color: 0xcccccc, roughness: 0.8, metalness: 0.05 }),
+    slab: new THREE.MeshStandardMaterial({ color: 0xaaaaaa, roughness: 0.85, metalness: 0.05 }),
+    window: new THREE.MeshPhysicalMaterial({ color: 0x88bbdd, roughness: 0.05, metalness: 0.1, transmission: 0.5, transparent: true, opacity: 0.6 }),
+    door: new THREE.MeshStandardMaterial({ color: 0x8B7355, roughness: 0.7, metalness: 0.05 }),
+    column: new THREE.MeshStandardMaterial({ color: 0x999999, roughness: 0.7, metalness: 0.1 }),
+    beam: new THREE.MeshStandardMaterial({ color: 0xb0b0b0, roughness: 0.6, metalness: 0.15 }),
+    roof: new THREE.MeshStandardMaterial({ color: 0x777788, roughness: 0.8, metalness: 0.05 }),
+    stair: new THREE.MeshStandardMaterial({ color: 0xbbbbbb, roughness: 0.7, metalness: 0.05 }),
+    railing: new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.3, metalness: 0.6 }),
+    pipe: new THREE.MeshStandardMaterial({ color: 0x66aa88, roughness: 0.4, metalness: 0.3 }),
+    duct: new THREE.MeshStandardMaterial({ color: 0x8899aa, roughness: 0.5, metalness: 0.4 }),
+    furniture: new THREE.MeshStandardMaterial({ color: 0xbb9966, roughness: 0.7, metalness: 0.05 }),
+    space: new THREE.MeshStandardMaterial({ color: 0xaaccee, roughness: 0.5, metalness: 0, transparent: true, opacity: 0.15 }),
+  };
+
+  // IFC type to material mapping
+  function getMaterialForType(typeStr) {
+    const t = (typeStr || '').toUpperCase();
+    if (t.includes('WALL') || t.includes('CURTAINWALL')) return ifcMaterials.wall;
+    if (t.includes('SLAB') || t.includes('FLOOR') || t.includes('FOOTING')) return ifcMaterials.slab;
+    if (t.includes('WINDOW')) return ifcMaterials.window;
+    if (t.includes('DOOR')) return ifcMaterials.door;
+    if (t.includes('COLUMN')) return ifcMaterials.column;
+    if (t.includes('BEAM')) return ifcMaterials.beam;
+    if (t.includes('ROOF') || t.includes('COVERING')) return ifcMaterials.roof;
+    if (t.includes('STAIR')) return ifcMaterials.stair;
+    if (t.includes('RAILING')) return ifcMaterials.railing;
+    if (t.includes('PIPE') || t.includes('FLOW')) return ifcMaterials.pipe;
+    if (t.includes('DUCT') || t.includes('AIRSEGMENT')) return ifcMaterials.duct;
+    if (t.includes('FURNISH')) return ifcMaterials.furniture;
+    if (t.includes('SPACE')) return ifcMaterials.space;
+    return defaultMat;
+  }
+
+  // Get all meshes using GetAllMeshes (flat geometry API)
+  try {
+    const flatMeshes = ifcAPI.LoadAllGeometry(modelID);
+    const totalMeshes = flatMeshes.size();
+
+    setProgress(55, `Processing ${totalMeshes} geometry sets…`);
+
+    for (let i = 0; i < totalMeshes; i++) {
+      const flatMesh = flatMeshes.get(i);
+      const expressID = flatMesh.expressID;
+      
+      // Try to get element type for material assignment
+      let ifcType = '';
+      try {
+        const lineData = ifcAPI.GetLine(modelID, expressID);
+        if (lineData && lineData.constructor) {
+          ifcType = lineData.constructor.name || '';
+        }
+      } catch (_) {}
+
+      const placedGeometries = flatMesh.geometries;
+      
+      for (let j = 0; j < placedGeometries.size(); j++) {
+        const placedGeom = placedGeometries.get(j);
+        const geomData = ifcAPI.GetGeometry(modelID, placedGeom.geometryExpressID);
+        
+        const verts = ifcAPI.GetVertexArray(geomData.GetVertexData(), geomData.GetVertexDataSize());
+        const indices = ifcAPI.GetIndexArray(geomData.GetIndexData(), geomData.GetIndexDataSize());
+
+        if (verts.length === 0 || indices.length === 0) continue;
+
+        const bufferGeom = new THREE.BufferGeometry();
+        
+        // web-ifc vertices: x,y,z, nx,ny,nz per vertex (6 floats)
+        const posArr = new Float32Array(verts.length / 2);
+        const normArr = new Float32Array(verts.length / 2);
+        
+        for (let k = 0; k < verts.length; k += 6) {
+          const idx = k / 6;
+          posArr[idx * 3] = verts[k];
+          posArr[idx * 3 + 1] = verts[k + 1];
+          posArr[idx * 3 + 2] = verts[k + 2];
+          normArr[idx * 3] = verts[k + 3];
+          normArr[idx * 3 + 1] = verts[k + 4];
+          normArr[idx * 3 + 2] = verts[k + 5];
+        }
+
+        bufferGeom.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
+        bufferGeom.setAttribute('normal', new THREE.BufferAttribute(normArr, 3));
+        bufferGeom.setIndex(new THREE.BufferAttribute(indices, 1));
+
+        const mat = getMaterialForType(ifcType).clone();
+        
+        // Apply colour from IFC if available
+        const color = placedGeom.color;
+        if (color && (color.x !== 0 || color.y !== 0 || color.z !== 0)) {
+          mat.color.setRGB(color.x, color.y, color.z);
+          if (color.w < 0.95) {
+            mat.transparent = true;
+            mat.opacity = color.w;
+          }
+        }
+
+        const mesh = new THREE.Mesh(bufferGeom, mat);
+
+        // Apply transform
+        const flatMatrix = placedGeom.flatTransformation;
+        const matrix = new THREE.Matrix4();
+        matrix.fromArray(flatMatrix);
+        mesh.applyMatrix4(matrix);
+
+        mesh.userData.expressID = expressID;
+        mesh.userData.ifcType = ifcType;
+        mesh.name = ifcType || ('Element_' + expressID);
+
+        group.add(mesh);
+      }
+
+      // Update progress
+      if (i % 50 === 0) {
+        const pct = 55 + (i / totalMeshes) * 30;
+        setProgress(pct, `Processing geometry ${i + 1} of ${totalMeshes}…`);
+        await new Promise(r => setTimeout(r, 0)); // yield to UI
+      }
+    }
+  } catch (e) {
+    console.error('IFC geometry extraction error:', e);
+    showError('Error extracting IFC geometry: ' + e.message);
+    ifcAPI.CloseModel(modelID);
+    return;
+  }
+
+  // Extract properties for selected elements
+  window._ifcAPI = ifcAPI;
+  window._ifcModelID = modelID;
+
+  setProgress(90, 'Finalising…');
+  addLoadedModelToScene(group, setProgress, file.name);
+}
+
+// ═══════════════════════════════════════
+// ADD LOADED MODEL TO SCENE (shared)
+// ═══════════════════════════════════════
+function addLoadedModelToScene(loadedObj, setProgress, filename) {
+  const replaceModel = document.getElementById('opt-replace').checked;
+  const autoCenter = document.getElementById('opt-center').checked;
+  const enableShadows = document.getElementById('opt-shadows').checked;
+
+  if (replaceModel && buildingGroup) {
+    while (buildingGroup.children.length > 0) {
+      const child = buildingGroup.children[0];
+      if (child.geometry) child.geometry.dispose();
+      if (child.material) {
+        if (Array.isArray(child.material)) child.material.forEach(m => m.dispose());
+        else child.material.dispose();
+      }
+      buildingGroup.remove(child);
+    }
+    state.buildingParts = [];
+  }
+
+  const importedGroup = loadedObj.isGroup || loadedObj.isObject3D ? loadedObj : (() => {
+    const g = new THREE.Group();
+    g.add(loadedObj);
+    return g;
+  })();
+
+  // Auto-centre and scale
+  if (autoCenter) {
+    const box = new THREE.Box3().setFromObject(importedGroup);
+    if (!box.isEmpty()) {
+      const size = box.getSize(new THREE.Vector3());
+      const center = box.getCenter(new THREE.Vector3());
+      const maxDim = Math.max(size.x, size.y, size.z);
+
+      if (maxDim > 0 && maxDim < 0.5) {
+        // Very small model — scale up (probably in metres and tiny)
+        const scaleFactor = 80 / maxDim;
+        importedGroup.scale.multiplyScalar(scaleFactor);
+      } else if (maxDim > 500) {
+        // Very large — scale down
+        const scaleFactor = 80 / maxDim;
+        importedGroup.scale.multiplyScalar(scaleFactor);
+      }
+
+      // Re-compute bounds after scale
+      const box2 = new THREE.Box3().setFromObject(importedGroup);
+      const center2 = box2.getCenter(new THREE.Vector3());
+      const size2 = box2.getSize(new THREE.Vector3());
+      importedGroup.position.sub(center2);
+      importedGroup.position.y += size2.y / 2;
+    }
+  }
+
+  let meshCount = 0;
+  importedGroup.traverse((child) => {
+    if (child.isMesh) {
+      meshCount++;
+      if (enableShadows) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+      child.userData.elemId = child.userData.expressID ? ('IFC-' + child.userData.expressID) : 'IMPORTED';
+      child.userData.originalMat = child.material;
+      child.userData.importedName = child.name || filename;
+      state.buildingParts.push(child);
+    }
+  });
+
+  buildingGroup.add(importedGroup);
+
+  // Fit camera
+  const bbox = new THREE.Box3().setFromObject(importedGroup);
+  if (!bbox.isEmpty()) {
+    const bCenter = bbox.getCenter(new THREE.Vector3());
+    const bSize = bbox.getSize(new THREE.Vector3());
+    const maxS = Math.max(bSize.x, bSize.y, bSize.z);
+    const dist = maxS * 1.8;
+
+    camera.position.set(bCenter.x + dist * 0.6, bCenter.y + dist * 0.4, bCenter.z + dist * 0.6);
+    controls.target.copy(bCenter);
+    controls.minDistance = dist * 0.1;
+    controls.maxDistance = dist * 5;
+    controls.update();
+  }
+
+  document.getElementById('elem-count').textContent = meshCount.toLocaleString() + ' elements';
+
+  // Update model tree
+  addImportedToTree(importedGroup, filename, meshCount);
+
+  setProgress(100, `✓ Loaded ${meshCount.toLocaleString()} element${meshCount !== 1 ? 's' : ''} from ${filename}`);
+
+  setTimeout(() => {
+    closeUploadModal();
+    showToast(`Model loaded: ${filename} (${meshCount.toLocaleString()} elements)`, 'success');
+    clearUploadFile();
+  }, 1000);
+}
+
+function addImportedToTree(group, filename, meshCount) {
+  const container = document.getElementById('model-tree');
+
+  // Collect mesh info grouped by type
+  const categories = {};
+  group.traverse(child => {
+    if (child.isMesh) {
+      const cat = child.userData.ifcType || 'Geometry';
+      if (!categories[cat]) categories[cat] = [];
+      categories[cat].push({
+        name: child.name || 'Mesh_' + categories[cat].length,
+        id: child.userData.elemId || 'IMPORTED'
+      });
+    }
+  });
+
+  const catId = 'imported-' + Date.now();
+  let html = `
+    <div class="tree-item" onclick="toggleTreeChildren('${catId}', this)" style="border-top:1px solid var(--border);margin-top:8px;padding-top:8px;">
+      <svg class="expand-arrow open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent)"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <span style="color:var(--accent);font-weight:500;">${filename}</span>
+      <span style="margin-left:auto;font-size:10px;color:var(--text-muted)">${meshCount || '?'}</span>
+    </div>
+    <div class="tree-children" id="tree-cat-${catId}">`;
+
+  Object.entries(categories).forEach(([cat, items]) => {
+    const subCatId = catId + '-' + cat.replace(/[^a-zA-Z0-9]/g, '');
+    html += `
+      <div class="tree-item" onclick="toggleTreeChildren('${subCatId}', this)">
+        <svg class="expand-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+        <span>${cat}</span>
+        <span style="margin-left:auto;font-size:10px;color:var(--text-muted)">${items.length}</span>
+      </div>
+      <div class="tree-children collapsed" id="tree-cat-${subCatId}">
+        ${items.slice(0, 100).map(el => `
+          <div class="tree-item" data-elem-id="${el.id}">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+            <span>${el.name}</span>
+          </div>
+        `).join('')}
+        ${items.length > 100 ? `<div class="tree-item" style="color:var(--text-muted);font-style:italic;">… and ${items.length - 100} more</div>` : ''}
+      </div>`;
+  });
+
+  html += '</div>';
+  container.insertAdjacentHTML('afterbegin', html);
+}
+</script>
+</body>
+</html>
