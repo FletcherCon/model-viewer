@@ -518,20 +518,63 @@ window.processModel = async function() {
     if (ext === 'ifc') {
       var s1 = addStep('Loading IFC engine (web-ifc)...', 'active');
       setProgress(5, 'Loading IFC engine...');
-      await new Promise(function(resolve, reject) {
-        if (window.WebIFC) { resolve(); return; }
-        var s = document.createElement('script');
-        s.src = 'https://cdn.jsdelivr.net/npm/web-ifc@0.0.57/web-ifc-api-iife.js';
-        s.onload = function() { setTimeout(resolve, 300); };
-        s.onerror = function() { reject(new Error('Failed to download web-ifc')); };
-        document.head.appendChild(s);
-      });
+
+      // CDN sources to try (in order of reliability)
+      // First try local file (user can download WASM to same folder as upload.html)
+      var ifcSources = [
+        { script: 'https://unpkg.com/web-ifc@0.0.44/web-ifc-api-iife.js', wasm: './' },
+        { script: 'https://unpkg.com/web-ifc@0.0.44/web-ifc-api-iife.js', wasm: 'https://unpkg.com/web-ifc@0.0.44/' },
+        { script: 'https://cdn.jsdelivr.net/npm/web-ifc@0.0.44/web-ifc-api-iife.js', wasm: 'https://cdn.jsdelivr.net/npm/web-ifc@0.0.44/' },
+        { script: 'https://unpkg.com/web-ifc@0.0.46/web-ifc-api-iife.js', wasm: 'https://unpkg.com/web-ifc@0.0.46/' },
+      ];
+
+      // Load script if not already loaded
+      if (!window.WebIFC) {
+        var loaded = false;
+        for (var si = 0; si < ifcSources.length; si++) {
+          try {
+            setProgress(5 + si * 2, 'Trying IFC source ' + (si+1) + '/' + ifcSources.length + '...');
+            await new Promise(function(resolve, reject) {
+              var s = document.createElement('script');
+              s.src = ifcSources[si].script;
+              s.onload = function() { setTimeout(resolve, 500); };
+              s.onerror = function() { reject(new Error('Script load failed')); };
+              document.head.appendChild(s);
+            });
+            if (window.WebIFC) { loaded = true; break; }
+          } catch (e) { console.warn('IFC source ' + si + ' script failed:', e); }
+        }
+        if (!loaded || !window.WebIFC) throw new Error('Could not load web-ifc library from any CDN. Check internet connection.');
+      }
+
       updateStep(s1, 'done');
       var s2 = addStep('Initialising IFC parser...', 'active');
       setProgress(15, 'Initialising...');
-      var api = new window.WebIFC.IfcAPI();
-      api.SetWasmPath('https://cdn.jsdelivr.net/npm/web-ifc@0.0.57/');
-      await api.Init();
+
+      // Try each WASM source
+      var api = null;
+      var initError = null;
+      for (var wi = 0; wi < ifcSources.length; wi++) {
+        try {
+          setProgress(15 + wi * 2, 'Trying WASM source ' + (wi+1) + '...');
+          var testApi = new window.WebIFC.IfcAPI();
+          testApi.SetWasmPath(ifcSources[wi].wasm);
+          await testApi.Init();
+          api = testApi;
+          console.log('[IFC] Initialised with source', wi, ifcSources[wi].wasm);
+          break;
+        } catch (e) {
+          console.warn('IFC WASM source ' + wi + ' failed:', e.message);
+          initError = e;
+        }
+      }
+
+      if (!api) {
+        throw new Error('WASM engine failed to initialise. The web-ifc WebAssembly file could not be loaded. ' +
+          (initError ? initError.message : 'Unknown error') +
+          '. Try exporting your model to GLB format from Revit instead.');
+      }
+
       updateStep(s2, 'done');
       var s3 = addStep('Reading IFC file...', 'active');
       setProgress(25, 'Reading file...');
@@ -643,7 +686,26 @@ window.processModel = async function() {
     console.error(err);
     fill.classList.add('error');
     setProgress(100, 'Error: '+err.message);
-    window.showToast('Failed: '+err.message, 'warning');
+
+    // Show helpful message for IFC WASM failures
+    var ext2 = file.name.split('.').pop().toLowerCase();
+    if (ext2 === 'ifc' && err.message.toLowerCase().indexOf('wasm') !== -1) {
+      window.showToast('IFC engine WASM failed — try exporting to .glb from Revit instead', 'warning');
+      // Show RVT-style help
+      var helpDiv = document.getElementById('rvt-help');
+      if (helpDiv) {
+        helpDiv.classList.remove('hidden');
+        helpDiv.querySelector('h4').textContent = '\u26A0 IFC engine could not load';
+        helpDiv.querySelector('ol').innerHTML =
+          '<li>The web-ifc WebAssembly engine failed to initialise from CDN.</li>' +
+          '<li><span class="opt-label">Workaround:</span> Open the model in Revit or any IFC viewer and export to <strong>.glb</strong> format, then upload the .glb here.</li>' +
+          '<li><span class="opt-label">Alternative viewers:</span> <a href="https://bimcollab.com/en/go/free-ifc-viewer" target="_blank">BIMcollab ZOOM</a>, ' +
+          '<a href="https://www.xeokit.io/" target="_blank">xeokit</a>, or ' +
+          '<a href="https://ifcjs.github.io/web-ifc-viewer/example/index" target="_blank">IFC.js demo</a>.</li>';
+      }
+    } else {
+      window.showToast('Failed: '+err.message, 'warning');
+    }
     btn.disabled = false;
   }
 };
