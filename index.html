@@ -265,41 +265,54 @@ html, body {
   font-family: var(--font-mono); word-break: break-all;
 }
 
-/* IOT PANEL */
-.iot-card {
-  background: var(--bg-tertiary); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 12px; margin-bottom: 10px;
-}
-.iot-card .sensor-header {
-  display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 8px;
-}
-.iot-card .sensor-name { font-size: 12px; font-weight: 600; }
-.iot-card .sensor-status {
-  width: 8px; height: 8px; border-radius: 50%;
-  animation: pulse 2s infinite;
-}
-.sensor-status.ok { background: var(--success); box-shadow: 0 0 6px rgba(16,185,129,0.5); }
-.sensor-status.warn { background: var(--warning); box-shadow: 0 0 6px rgba(245,158,11,0.5); }
-.sensor-status.danger { background: var(--danger); box-shadow: 0 0 6px rgba(239,68,68,0.5); }
-@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
-
-.iot-value {
-  font-size: 28px; font-weight: 700; font-family: var(--font-mono);
-  line-height: 1;
-}
-.iot-unit { font-size: 13px; font-weight: 400; color: var(--text-muted); margin-left: 2px; }
-.iot-bar {
+/* PROGRESS BAR (used in properties) */
+.progress-bar {
   height: 6px; border-radius: 3px; background: var(--bg-hover);
   margin-top: 8px; overflow: hidden;
 }
-.iot-bar-fill {
+.progress-bar-fill {
   height: 100%; border-radius: 3px; transition: width .8s ease;
 }
-.iot-meta {
-  display: flex; justify-content: space-between; margin-top: 6px;
-  font-size: 10px; color: var(--text-muted);
+
+/* BCF IMPORT PANEL */
+.bcf-drop-zone {
+  border: 2px dashed var(--border-light); border-radius: var(--radius);
+  padding: 24px 16px; text-align: center; cursor: pointer;
+  transition: all .2s; margin: 12px;
 }
+.bcf-drop-zone:hover, .bcf-drop-zone.drag-over {
+  border-color: var(--accent); background: var(--accent-glow);
+}
+.bcf-drop-zone svg { margin: 0 auto 8px; display: block; opacity: 0.4; }
+.clash-nav-bar {
+  display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+  background: var(--bg-tertiary); border-bottom: 1px solid var(--border);
+}
+.clash-nav-bar button {
+  background: var(--bg-hover); border: 1px solid var(--border); border-radius: 4px;
+  color: var(--text-primary); padding: 4px 10px; cursor: pointer; font-size: 11px;
+  font-family: var(--font-body); transition: all .15s;
+}
+.clash-nav-bar button:hover { background: var(--accent); border-color: var(--accent); }
+.clash-nav-bar button:disabled { opacity: 0.3; cursor: default; }
+.clash-nav-bar span { font-size: 11px; color: var(--text-secondary); }
+.clash-context {
+  background: var(--bg-tertiary); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 10px 12px; margin: 8px 12px;
+  font-size: 11px;
+}
+.clash-context h4 { font-size: 11px; color: var(--accent); margin-bottom: 6px; }
+.clash-context .ctx-row { display: flex; justify-content: space-between; margin-bottom: 3px; }
+.clash-context .ctx-key { color: var(--text-muted); }
+.clash-context .ctx-val { color: var(--text-primary); font-family: var(--font-mono); font-size: 11px; }
+.clash-status-btn {
+  display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px;
+  border-radius: 4px; font-size: 10px; font-weight: 600; cursor: pointer;
+  border: 1px solid var(--border); background: var(--bg-hover); color: var(--text-primary);
+  transition: all .15s;
+}
+.clash-status-btn:hover { background: var(--accent); border-color: var(--accent); }
+.clash-status-btn.resolved { background: var(--success); border-color: var(--success); color: #fff; }
 
 /* PROGRESS OVERLAY */
 .progress-legend {
@@ -487,6 +500,7 @@ html, body {
   cursor: pointer; transition: all .15s;
 }
 .clash-item:hover { border-color: var(--danger); }
+.clash-item.selected { border-color: var(--accent); background: var(--accent-glow); box-shadow: 0 0 8px rgba(59,130,246,0.2); }
 .clash-icon {
   width: 32px; height: 32px; border-radius: 6px;
   display: flex; align-items: center; justify-content: center;
@@ -746,9 +760,9 @@ html, body {
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
       <span>Progress</span>
     </button>
-    <button class="tool-btn" id="btn-iot" onclick="toggleIoTOverlay()" title="IoT Overlay">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h.01"/><path d="M8.5 16.5a5 5 0 017 0"/><path d="M5 12.5a10 10 0 0114 0"/><path d="M1.5 8.5a15 15 0 0121 0"/></svg>
-      <span>IoT</span>
+    <button class="tool-btn" id="btn-bcf" onclick="openBcfImport()" title="Import BCF Issues">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="M9 15l3-3 3 3"/></svg>
+      <span>BCF</span>
     </button>
     <div class="divider"></div>
     <button class="tool-btn" onclick="togglePanel('left')" title="Toggle Model Tree">
@@ -824,7 +838,7 @@ html, body {
       <!-- Clashes Tab -->
       <div id="left-tab-clashes" style="display:none">
         <div class="panel-header">
-          <h3>Clash Detection — 12 Issues</h3>
+          <h3 id="clash-header">Clash Detection</h3>
         </div>
         <div class="panel-content" id="clash-list"></div>
       </div>
@@ -845,11 +859,11 @@ html, body {
       </div>
     </div>
 
-    <!-- RIGHT PANEL: Properties + IoT + Docs -->
+    <!-- RIGHT PANEL: Properties + Clash Context + Docs -->
     <div class="panel-right" id="panel-right">
       <div class="panel-tabs">
         <button class="panel-tab active" onclick="switchRightTab('props')">Properties</button>
-        <button class="panel-tab" onclick="switchRightTab('iot')">IoT Data</button>
+        <button class="panel-tab" onclick="switchRightTab('clash')">Clash Context</button>
         <button class="panel-tab" onclick="switchRightTab('docs')">Documents</button>
       </div>
 
@@ -863,13 +877,19 @@ html, body {
         </div>
       </div>
 
-      <!-- IoT Tab -->
-      <div id="right-tab-iot" style="display:none">
-        <div class="panel-header">
-          <h3>Live Sensor Readings</h3>
-          <span style="font-size:10px;color:var(--success);">● Live</span>
+      <!-- Clash Context Tab -->
+      <div id="right-tab-clash" style="display:none">
+        <div class="clash-nav-bar" id="clash-nav-bar">
+          <button onclick="navigateClash(-1)" id="clash-prev-btn" disabled>◀ Prev</button>
+          <span id="clash-nav-label">No clash selected</span>
+          <button onclick="navigateClash(1)" id="clash-next-btn" disabled>Next ▶</button>
         </div>
-        <div class="panel-content" id="iot-content"></div>
+        <div class="panel-content" id="clash-context-content">
+          <div style="text-align:center;padding:40px 20px;color:var(--text-muted);">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 12px;display:block;opacity:0.3"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <p>Select a clash from the list<br>or import a BCF file to see details</p>
+          </div>
+        </div>
       </div>
 
       <!-- Documents Tab -->
@@ -953,7 +973,6 @@ const state = {
   sectionActive: false,
   explodeActive: false,
   progressOverlay: false,
-  iotOverlay: false,
   measureActive: false,
   isolateMode: false,
   explodeFactor: 0,
@@ -995,17 +1014,6 @@ const ELEMENT_DB = [
   { id: 'ENT-001', name: 'Canopy — Main Entry', category: 'Canopies', type: 'Steel + Glass Canopy', material: 'Steel / Laminated Glass', level: 'Ground', discipline: 'arch', progress: 30, status: 'In Progress' },
 ];
 
-const IOT_SENSORS = [
-  { id: 'DUST-L03', name: 'PM10 Dust — Level 03', unit: 'µg/m³', value: 42, max: 100, threshold: 50, zone: 'Level 03', status: 'ok' },
-  { id: 'DUST-L12', name: 'PM10 Dust — Level 12', unit: 'µg/m³', value: 67, max: 100, threshold: 50, zone: 'Level 12', status: 'warn' },
-  { id: 'TEMP-EXT', name: 'Temperature — External', unit: '°C', value: 28.4, max: 50, threshold: 35, zone: 'External', status: 'ok' },
-  { id: 'TEMP-L06', name: 'Temperature — Level 06', unit: '°C', value: 36.2, max: 50, threshold: 35, zone: 'Level 06', status: 'warn' },
-  { id: 'NOISE-GF', name: 'Noise — Ground Floor', unit: 'dB', value: 78, max: 120, threshold: 85, zone: 'Ground', status: 'ok' },
-  { id: 'VIBR-FDN', name: 'Vibration — Foundation', unit: 'mm/s', value: 2.1, max: 10, threshold: 5, zone: 'Foundation', status: 'ok' },
-  { id: 'HUMID-L18', name: 'Humidity — Level 18', unit: '%RH', value: 82, max: 100, threshold: 70, zone: 'Level 18', status: 'danger' },
-  { id: 'WIND-RF', name: 'Wind Speed — Roof', unit: 'km/h', value: 34, max: 80, threshold: 40, zone: 'Roof', status: 'ok' },
-];
-
 const DOCUMENTS = [
   { name: 'Method Statement — Curtain Wall Install', type: 'pdf', size: '2.4 MB', date: '05 Feb 2026', linked: ['CWT-001','CWT-002','CWT-003','CWT-004'] },
   { name: 'Structural Drawings — Core Walls', type: 'dwg', size: '18.7 MB', date: '01 Feb 2026', linked: ['WAL-001'] },
@@ -1019,19 +1027,19 @@ const DOCUMENTS = [
   { name: 'As-Built Survey — Site Works', type: 'dwg', size: '8.3 MB', date: '02 Feb 2026', linked: ['CVL-001','CVL-002'] },
 ];
 
-const CLASHES = [
-  { id: 'CLH-001', desc: 'Duct penetrates beam at L12', elements: ['MEP-HVAC-001','COL-001'], severity: 'high', discipline: 'STR ↔ MEP' },
-  { id: 'CLH-002', desc: 'Pipe clashes with column C7 at L08', elements: ['MEP-PLB-001','COL-001'], severity: 'high', discipline: 'STR ↔ MEP' },
-  { id: 'CLH-003', desc: 'Cable tray overlaps duct at L15', elements: ['MEP-ELEC-001','MEP-HVAC-001'], severity: 'med', discipline: 'MEP ↔ MEP' },
-  { id: 'CLH-004', desc: 'Curtain wall mullion hits slab edge', elements: ['CWT-001','SLB-001'], severity: 'med', discipline: 'ARCH ↔ STR' },
-  { id: 'CLH-005', desc: 'Fire riser clashes with stair landing', elements: ['MEP-PLB-001','WAL-001'], severity: 'high', discipline: 'MEP ↔ ARCH' },
-  { id: 'CLH-006', desc: 'Downpipe route through structural zone', elements: ['MEP-PLB-001','FDN-001'], severity: 'low', discipline: 'MEP ↔ CIV' },
-  { id: 'CLH-007', desc: 'AC condenser on unrated roof area', elements: ['MEP-HVAC-001','RFP-001'], severity: 'med', discipline: 'MEP ↔ ARCH' },
-  { id: 'CLH-008', desc: 'Window head clashes with beam soffit', elements: ['CWT-003','SLB-001'], severity: 'low', discipline: 'ARCH ↔ STR' },
-  { id: 'CLH-009', desc: 'Switchboard encroaches on corridor', elements: ['MEP-ELEC-001','WAL-001'], severity: 'med', discipline: 'MEP ↔ ARCH' },
-  { id: 'CLH-010', desc: 'Canopy steelwork vs facade bracket', elements: ['ENT-001','CWT-001'], severity: 'low', discipline: 'ARCH ↔ ARCH' },
-  { id: 'CLH-011', desc: 'Stormwater pipe vs footing', elements: ['CVL-002','FDN-001'], severity: 'high', discipline: 'CIV ↔ STR' },
-  { id: 'CLH-012', desc: 'BMS conduit route undefined at riser', elements: ['MEP-ELEC-001','WAL-001'], severity: 'low', discipline: 'MEP ↔ STR' },
+const CLASH_DATA = [
+  { id: 'CLH-001', description: 'Duct penetrates beam at L12', elements: ['MEP-HVAC-001','COL-001'], severity: 'HIGH', disciplines: 'STR ↔ MEP', status: 'Open', source: 'Navisworks' },
+  { id: 'CLH-002', description: 'Pipe clashes with column C7 at L08', elements: ['MEP-PLB-001','COL-001'], severity: 'HIGH', disciplines: 'STR ↔ MEP', status: 'Open', source: 'Navisworks' },
+  { id: 'CLH-003', description: 'Cable tray overlaps duct at L15', elements: ['MEP-ELEC-001','MEP-HVAC-001'], severity: 'MED', disciplines: 'MEP ↔ MEP', status: 'Open', source: 'Navisworks' },
+  { id: 'CLH-004', description: 'Curtain wall mullion hits slab edge', elements: ['CWT-001','SLB-001'], severity: 'MED', disciplines: 'ARCH ↔ STR', status: 'Open', source: 'Revizto' },
+  { id: 'CLH-005', description: 'Fire riser clashes with stair landing', elements: ['MEP-PLB-001','WAL-001'], severity: 'HIGH', disciplines: 'MEP ↔ ARCH', status: 'Open', source: 'Navisworks' },
+  { id: 'CLH-006', description: 'Downpipe route through structural zone', elements: ['MEP-PLB-001','FDN-001'], severity: 'LOW', disciplines: 'MEP ↔ CIV', status: 'Open', source: 'Revizto' },
+  { id: 'CLH-007', description: 'AC condenser on unrated roof area', elements: ['MEP-HVAC-001','RFP-001'], severity: 'MED', disciplines: 'MEP ↔ ARCH', status: 'In Review', source: 'Navisworks' },
+  { id: 'CLH-008', description: 'Window head clashes with beam soffit', elements: ['CWT-003','SLB-001'], severity: 'LOW', disciplines: 'ARCH ↔ STR', status: 'Resolved', source: 'Revizto' },
+  { id: 'CLH-009', description: 'Switchboard encroaches on corridor', elements: ['MEP-ELEC-001','WAL-001'], severity: 'MED', disciplines: 'MEP ↔ ARCH', status: 'Open', source: 'Navisworks' },
+  { id: 'CLH-010', description: 'Canopy steelwork vs facade bracket', elements: ['ENT-001','CWT-001'], severity: 'LOW', disciplines: 'ARCH ↔ ARCH', status: 'Deferred', source: 'Manual' },
+  { id: 'CLH-011', description: 'Stormwater pipe vs footing', elements: ['CVL-002','FDN-001'], severity: 'HIGH', disciplines: 'CIV ↔ STR', status: 'Open', source: 'Navisworks' },
+  { id: 'CLH-012', description: 'BMS conduit route undefined at riser', elements: ['MEP-ELEC-001','WAL-001'], severity: 'LOW', disciplines: 'MEP ↔ STR', status: 'Open', source: 'Manual' },
 ];
 
 // ═══════════════════════════════════════
@@ -1157,8 +1165,7 @@ function buildBuilding() {
     progressDelayed: new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.5, metalness: 0.1 }),
     progressNotStarted: new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.5, metalness: 0.1 }),
     highlight: new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.3, metalness: 0.3, emissive: 0x1e40af, emissiveIntensity: 0.3 }),
-    iotWarn: new THREE.MeshStandardMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.5, emissive: 0xf59e0b, emissiveIntensity: 0.3 }),
-    iotDanger: new THREE.MeshStandardMaterial({ color: 0xef4444, transparent: true, opacity: 0.5, emissive: 0xef4444, emissiveIntensity: 0.4 }),
+    clashHighlight: new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.3, metalness: 0.2, emissive: 0xef4444, emissiveIntensity: 0.4, transparent: true, opacity: 0.7 }),
   };
   window._mats = mats;
 
@@ -1429,8 +1436,6 @@ function deselectAll() {
     state.buildingParts.filter(p => p.userData.elemId === oldId).forEach(p => {
       if (state.progressOverlay) {
         applyProgressMat(p);
-      } else if (state.iotOverlay) {
-        applyIoTMat(p);
       } else {
         p.material = p.userData.originalMat;
       }
@@ -1560,9 +1565,7 @@ window.toggleMeasure = function() {
 
 window.toggleProgressOverlay = function() {
   state.progressOverlay = !state.progressOverlay;
-  if (state.progressOverlay) state.iotOverlay = false;
   document.getElementById('btn-progress').classList.toggle('active', state.progressOverlay);
-  document.getElementById('btn-iot').classList.remove('active');
   document.getElementById('progress-panel').style.display = state.progressOverlay ? 'block' : 'none';
 
   state.buildingParts.forEach(p => {
@@ -1587,43 +1590,150 @@ function applyProgressMat(mesh) {
   else mesh.material = m.progressNotStarted;
 }
 
-window.toggleIoTOverlay = function() {
-  state.iotOverlay = !state.iotOverlay;
-  if (state.iotOverlay) state.progressOverlay = false;
-  document.getElementById('btn-iot').classList.toggle('active', state.iotOverlay);
-  document.getElementById('btn-progress').classList.remove('active');
-  document.getElementById('progress-panel').style.display = 'none';
+// ═══════════════════════════════════════
+// CLASH NAVIGATION & BCF WORKFLOW
+// ═══════════════════════════════════════
+let clashNavIndex = -1;
 
+window.navigateClash = function(dir) {
+  const clashes = CLASH_DATA;
+  if (clashes.length === 0) return;
+  clashNavIndex = Math.max(0, Math.min(clashes.length - 1, clashNavIndex + dir));
+  selectClash(clashes[clashNavIndex].id);
+  updateClashNav();
+};
+
+function updateClashNav() {
+  const total = CLASH_DATA.length;
+  document.getElementById('clash-nav-label').textContent = total > 0 ? `${clashNavIndex + 1} / ${total}` : 'No clashes';
+  document.getElementById('clash-prev-btn').disabled = clashNavIndex <= 0;
+  document.getElementById('clash-next-btn').disabled = clashNavIndex >= total - 1;
+}
+
+window.selectClash = function(clashId) {
+  const clash = CLASH_DATA.find(c => c.id === clashId);
+  if (!clash) return;
+  clashNavIndex = CLASH_DATA.indexOf(clash);
+
+  // Highlight the clash card in left panel
+  document.querySelectorAll('.clash-card').forEach(c => c.classList.remove('selected'));
+  const card = document.querySelector(`.clash-card[data-id="${clashId}"]`);
+  if (card) { card.classList.add('selected'); card.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+
+  // Show clash context in right panel
+  showClashContext(clash);
+  switchRightTab('clash');
+  updateClashNav();
+
+  // Highlight affected elements in 3D
+  deselectAll();
   state.buildingParts.forEach(p => {
-    if (state.iotOverlay) {
-      applyIoTMat(p);
-    } else {
-      p.material = p.userData.originalMat;
+    if (clash.elements.includes(p.userData.elemId)) {
+      p.material = window._mats.clashHighlight;
     }
   });
 
-  if (state.iotOverlay) {
-    switchRightTab('iot');
-    showToast('IoT sensor overlay active', 'success');
+  showToast(`Viewing ${clash.id}: ${clash.description}`, 'info');
+}
+
+function showClashContext(clash) {
+  const container = document.getElementById('clash-context-content');
+  const elem1 = ELEMENT_DB.find(e => e.id === clash.elements[0]);
+  const elem2 = ELEMENT_DB.find(e => e.id === clash.elements[1]);
+  const sevColor = clash.severity === 'HIGH' ? 'var(--danger)' : clash.severity === 'MED' ? 'var(--warning)' : 'var(--text-muted)';
+
+  container.innerHTML = `
+    <div class="clash-context">
+      <h4>⚠ ${clash.id} — ${clash.description}</h4>
+      <div class="ctx-row"><span class="ctx-key">Severity</span><span class="ctx-val" style="color:${sevColor}">${clash.severity}</span></div>
+      <div class="ctx-row"><span class="ctx-key">Disciplines</span><span class="ctx-val">${clash.disciplines}</span></div>
+      <div class="ctx-row"><span class="ctx-key">Status</span><span class="ctx-val">${clash.status || 'Open'}</span></div>
+      <div class="ctx-row"><span class="ctx-key">Source</span><span class="ctx-val">${clash.source || 'Manual'}</span></div>
+    </div>
+    ${elem1 ? `
+    <div class="clash-context" style="border-left:3px solid var(--accent);">
+      <h4>Element A</h4>
+      <div class="ctx-row"><span class="ctx-key">ID</span><span class="ctx-val">${elem1.id}</span></div>
+      <div class="ctx-row"><span class="ctx-key">Name</span><span class="ctx-val">${elem1.name}</span></div>
+      <div class="ctx-row"><span class="ctx-key">Category</span><span class="ctx-val">${elem1.category}</span></div>
+      <div class="ctx-row"><span class="ctx-key">Material</span><span class="ctx-val">${elem1.material}</span></div>
+      <div class="ctx-row"><span class="ctx-key">Level</span><span class="ctx-val">${elem1.level}</span></div>
+    </div>` : ''}
+    ${elem2 ? `
+    <div class="clash-context" style="border-left:3px solid var(--warning);">
+      <h4>Element B</h4>
+      <div class="ctx-row"><span class="ctx-key">ID</span><span class="ctx-val">${elem2.id}</span></div>
+      <div class="ctx-row"><span class="ctx-key">Name</span><span class="ctx-val">${elem2.name}</span></div>
+      <div class="ctx-row"><span class="ctx-key">Category</span><span class="ctx-val">${elem2.category}</span></div>
+      <div class="ctx-row"><span class="ctx-key">Material</span><span class="ctx-val">${elem2.material}</span></div>
+      <div class="ctx-row"><span class="ctx-key">Level</span><span class="ctx-val">${elem2.level}</span></div>
+    </div>` : ''}
+    <div style="padding:8px 12px;">
+      <h4 style="font-size:11px;color:var(--text-muted);margin-bottom:6px;">Suggested Resolution</h4>
+      <p style="font-size:11px;color:var(--text-secondary);line-height:1.5;">${clash.suggestion || getResolutionSuggestion(clash)}</p>
+    </div>
+    <div style="padding:8px 12px;display:flex;gap:6px;flex-wrap:wrap;">
+      <button class="clash-status-btn ${clash.status === 'Resolved' ? 'resolved' : ''}" onclick="updateClashStatus('${clash.id}','Resolved')">✓ Mark Resolved</button>
+      <button class="clash-status-btn" onclick="updateClashStatus('${clash.id}','In Review')">↻ In Review</button>
+      <button class="clash-status-btn" onclick="updateClashStatus('${clash.id}','Deferred')">⏸ Defer</button>
+    </div>
+  `;
+}
+
+function getResolutionSuggestion(clash) {
+  const suggestions = {
+    'STR ↔ MEP': 'Coordinate with MEP designer to reroute services around structural members. Consider adding sleeves or penetration details if routing through is required.',
+    'MEP ↔ MEP': 'Check service priority hierarchy. Larger or gravity-fed services typically take precedence. Reroute the smaller service to maintain clearances.',
+    'ARCH ↔ STR': 'Verify architectural intent against structural requirements. Adjust architectural element to clear structural zone or request structural modification if feasible.',
+    'MEP ↔ ARCH': 'Coordinate ceiling void depth. Services may need rerouting above or below architectural elements. Check for adequate access panel provisions.',
+    'MEP ↔ CIV': 'Review service route against civil works zones. Ensure adequate separation and protection is provided at interface points.',
+  };
+  return suggestions[clash.disciplines] || 'Review clash in coordination meeting. Determine responsible discipline and propose resolution with minimum impact to programme.';
+}
+
+window.updateClashStatus = function(clashId, newStatus) {
+  const clash = CLASH_DATA.find(c => c.id === clashId);
+  if (clash) {
+    clash.status = newStatus;
+    showClashContext(clash);
+    buildClashesPanel();
+    showToast(`${clashId} marked as ${newStatus}`, newStatus === 'Resolved' ? 'success' : 'info');
   }
 };
 
-function applyIoTMat(mesh) {
-  mesh.material = mesh.userData.originalMat;
-  // Highlight floors with bad sensor readings
-  const m = window._mats;
-  const elem = ELEMENT_DB.find(el => el.id === mesh.userData.elemId);
-  if (!elem) return;
+window.openBcfImport = function() {
+  switchLeftTab('clashes');
+  showToast('Drop a BCF file on the clash panel or click to import', 'info');
+};
 
-  // Check if any danger/warn sensors affect this element's zone
-  IOT_SENSORS.forEach(s => {
-    if (s.status === 'danger' && (elem.level === s.zone || elem.level === 'Multi')) {
-      mesh.material = m.iotDanger;
-    } else if (s.status === 'warn' && (elem.level === s.zone || (elem.level === 'Multi' && s.zone.includes('12')))) {
-      if (mesh.material !== m.iotDanger) mesh.material = m.iotWarn;
-    }
-  });
+window.handleBcfFile = function(file) {
+  // Simulated BCF import — in production this would parse the BCF XML/ZIP
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    showToast(`BCF file "${file.name}" imported — parsing issues...`, 'info');
+    setTimeout(() => {
+      // Simulate adding BCF issues to the clash list
+      const bcfClashes = [
+        { id: 'BCF-001', description: 'Imported: Duct collision at grid C4', severity: 'HIGH', disciplines: 'STR ↔ MEP', elements: ['SLB-001','MEP-HVAC-001'], source: 'BCF Import', status: 'Open' },
+        { id: 'BCF-002', description: 'Imported: Pipe clearance issue at riser', severity: 'MED', disciplines: 'MEP ↔ MEP', elements: ['MEP-PLB-001','MEP-ELEC-001'], source: 'BCF Import', status: 'Open' },
+      ];
+      CLASH_DATA.push(...bcfClashes);
+      buildClashesPanel();
+      showToast(`${bcfClashes.length} issues imported from BCF file`, 'success');
+    }, 1200);
+  };
+  reader.readAsArrayBuffer(file);
 }
+
+window.exportClashReport = function() {
+  const report = CLASH_DATA.map(c => `${c.id}\t${c.description}\t${c.severity}\t${c.disciplines}\t${c.status || 'Open'}`).join('\n');
+  const blob = new Blob(['ID\tDescription\tSeverity\tDisciplines\tStatus\n' + report], { type: 'text/tab-separated-values' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'clash_report.tsv'; a.click();
+  URL.revokeObjectURL(url);
+  showToast('Clash report exported', 'success');
+};
 
 window.toggleModel = function(discipline) {
   state.models[discipline] = !state.models[discipline];
@@ -1729,7 +1839,7 @@ function showProperties(elem) {
       <div class="prop-row"><span class="prop-key">Status</span><span class="prop-val" style="color:${progressColor}">${elem.status}</span></div>
       <div class="prop-row"><span class="prop-key">Completion</span><span class="prop-val" style="color:${progressColor}">${elem.progress}%</span></div>
       <div style="padding:4px 8px;">
-        <div class="iot-bar"><div class="iot-bar-fill" style="width:${elem.progress}%;background:${progressColor}"></div></div>
+        <div class="progress-bar"><div class="progress-bar-fill" style="width:${elem.progress}%;background:${progressColor}"></div></div>
       </div>
     </div>
     <div class="prop-section">
@@ -1813,46 +1923,6 @@ window.filterTree = function() {
 };
 
 // ═══════════════════════════════════════
-// IOT PANEL
-// ═══════════════════════════════════════
-function buildIoTPanel() {
-  const container = document.getElementById('iot-content');
-  container.innerHTML = IOT_SENSORS.map(s => {
-    const pct = (s.value / s.max) * 100;
-    const barColor = s.status === 'danger' ? 'var(--danger)' : s.status === 'warn' ? 'var(--warning)' : 'var(--success)';
-    return `
-      <div class="iot-card">
-        <div class="sensor-header">
-          <span class="sensor-name">${s.name}</span>
-          <span class="sensor-status ${s.status}"></span>
-        </div>
-        <div class="iot-value" style="color:${barColor}">${s.value}<span class="iot-unit">${s.unit}</span></div>
-        <div class="iot-bar"><div class="iot-bar-fill" style="width:${pct}%;background:${barColor}"></div></div>
-        <div class="iot-meta">
-          <span>Threshold: ${s.threshold} ${s.unit}</span>
-          <span>Zone: ${s.zone}</span>
-        </div>
-      </div>
-    `;
-  }).join('');
-}
-
-// Simulate live updates
-function updateIoTValues() {
-  IOT_SENSORS.forEach(s => {
-    s.value += (Math.random() - 0.48) * (s.max * 0.02);
-    s.value = Math.max(0, Math.min(s.max, parseFloat(s.value.toFixed(1))));
-    s.status = s.value > s.threshold * 1.2 ? 'danger' : s.value > s.threshold ? 'warn' : 'ok';
-  });
-  buildIoTPanel();
-  if (state.iotOverlay) {
-    state.buildingParts.forEach(p => {
-      if (state.selectedObject && p.userData.elemId === state.selectedObject.userData.elemId) return;
-      applyIoTMat(p);
-    });
-  }
-}
-
 // ═══════════════════════════════════════
 // DOCUMENTS PANEL
 // ═══════════════════════════════════════
@@ -1874,17 +1944,39 @@ function buildDocsPanel() {
 // ═══════════════════════════════════════
 function buildClashesPanel() {
   const container = document.getElementById('clash-list');
-  container.innerHTML = CLASHES.map(c => `
-    <div class="clash-item" onclick="selectTreeItem('${c.elements[0]}')">
-      <div class="clash-icon">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-      </div>
-      <div class="clash-info">
-        <h4>${c.id}: ${c.desc}</h4>
-        <p>${c.discipline} · <span class="clash-severity ${c.severity}">${c.severity}</span></p>
+  const openCount = CLASH_DATA.filter(c => c.status === 'Open').length;
+  const resolvedCount = CLASH_DATA.filter(c => c.status === 'Resolved').length;
+  const totalCount = CLASH_DATA.length;
+  document.getElementById('clash-header').textContent = `Clash Detection — ${totalCount} Issues`;
+
+  container.innerHTML = `
+    <div style="padding:8px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);">
+      <span style="font-size:11px;color:var(--text-muted);">${openCount} open · ${resolvedCount} resolved · ${totalCount} total</span>
+      <div style="display:flex;gap:4px;">
+        <button class="clash-status-btn" onclick="exportClashReport()" title="Export TSV report">↓ Export</button>
       </div>
     </div>
-  `).join('');
+    <div class="bcf-drop-zone" id="bcf-drop-zone" onclick="document.getElementById('bcf-file-input').click()">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="M9 15l3-3 3 3"/></svg>
+      <p style="font-size:11px;color:var(--text-muted);">Drop BCF file here or click to import</p>
+      <input type="file" id="bcf-file-input" accept=".bcf,.bcfzip,.zip" style="display:none" onchange="if(this.files[0])handleBcfFile(this.files[0])">
+    </div>
+  ` + CLASH_DATA.map((c, i) => {
+    const sevColor = c.severity === 'HIGH' ? 'var(--danger)' : c.severity === 'MED' ? 'var(--warning)' : 'var(--text-muted)';
+    const statusIcon = c.status === 'Resolved' ? '✓' : c.status === 'In Review' ? '↻' : c.status === 'Deferred' ? '⏸' : '⚠';
+    const statusStyle = c.status === 'Resolved' ? 'color:var(--success);' : c.status === 'Deferred' ? 'opacity:0.5;' : '';
+    return `
+    <div class="clash-card clash-item ${c.status === 'Resolved' ? 'resolved' : ''}" data-id="${c.id}" onclick="selectClash('${c.id}')" style="${c.status === 'Resolved' ? 'opacity:0.5;' : ''}">
+      <div class="clash-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="${c.severity === 'HIGH' ? '#ef4444' : c.severity === 'MED' ? '#f59e0b' : '#64748b'}" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </div>
+      <div class="clash-info">
+        <h4>${c.id}: ${c.description}</h4>
+        <p>${c.disciplines} · <span class="clash-severity ${c.severity.toLowerCase()}">${c.severity}</span> · <span style="${statusStyle}">${statusIcon} ${c.status || 'Open'}</span></p>
+        <p style="font-size:9px;color:var(--text-muted);margin-top:2px;">Source: ${c.source || 'Manual'}</p>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 // ═══════════════════════════════════════
@@ -1944,8 +2036,8 @@ window.doLogin = function() {
     document.querySelectorAll('.panel-left .panel-tab')[2].style.display = 'none'; // Clashes
     showToast('Welcome! View-only access for client review.', 'info');
   } else if (state.role === 'manager') {
-    showToast('Site Manager view — IoT sensors active.', 'info');
-    toggleIoTOverlay();
+    showToast('Site Manager view — clash detection panel active.', 'info');
+    switchLeftTab('clashes');
   } else {
     showToast(`Signed in as ${state.user} (${state.role})`, 'success');
   }
@@ -1980,12 +2072,25 @@ function init() {
 
   // Build panels
   buildModelTree();
-  buildIoTPanel();
   buildDocsPanel();
   buildClashesPanel();
+  setupBcfDropZone();
+}
 
-  // Live IoT updates
-  setInterval(updateIoTValues, 3000);
+function setupBcfDropZone() {
+  // Enable BCF drag-and-drop on the clashes panel
+  const clashPanel = document.querySelector('.panel-left');
+  if (!clashPanel) return;
+  clashPanel.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); });
+  clashPanel.addEventListener('drop', (e) => {
+    e.preventDefault(); e.stopPropagation();
+    const files = e.dataTransfer.files;
+    if (files.length > 0 && (files[0].name.endsWith('.bcf') || files[0].name.endsWith('.bcfzip') || files[0].name.endsWith('.zip'))) {
+      handleBcfFile(files[0]);
+    } else {
+      showToast('Please drop a valid BCF (.bcf / .bcfzip) file', 'warning');
+    }
+  });
 }
 
 init();
